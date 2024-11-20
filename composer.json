@@ -1,0 +1,13 @@
+{
+    "name": "hp/local",
+    "description": "une akp web",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "patrick selebunga"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {}
+}
