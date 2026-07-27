@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inscription Parent - SYSLOC</title>
+    <title>Créer un Compte - ScholaGuard Maternelle</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <header>
     <div class="header-container">
         <a href="index.html" class="logo">
-            <span>SYSLOC</span>
-            <span class="logo-badge">GPS TRACKER</span>
+            <span>🏫 ScholaGuard</span>
+            <span class="logo-badge">ÉCOLE MATERNELLE</span>
         </a>
         <nav>
             <a href="index.html">Connexion</a>
-            <a href="utilisateur.html" class="active">Inscription</a>
+            <a href="utilisateur.html" class="active">Créer un Compte</a>
         </nav>
     </div>
 </header>
@@ -24,14 +24,24 @@
     <div class="form-card-wrapper">
         <div class="card-minimal">
             <div class="form-header">
-                <h2>Créer un Compte Parent</h2>
-                <p>Enregistrez-vous pour suivre votre enfant en toute sécurité</p>
+                <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🔑</div>
+                <h2>Créer un Compte Utilisateur</h2>
+                <p>Espace Enseignants, Éducateurs, Direction & Parents d'Élèves</p>
             </div>
 
             <div id="errorMsg" class="alert alert-error" style="display: none;"></div>
             <div id="successMsg" class="alert alert-success" style="display: none;"></div>
 
             <form id="signupForm">
+                <div class="form-group">
+                    <label for="role">Rôle / Profil d'accès</label>
+                    <select id="role" name="role" required>
+                        <option value="enseignant">Enseignant / Éducateur Maternelle</option>
+                        <option value="direction">Direction / Administration Scolaire</option>
+                        <option value="parent" selected>Parent d'Élève</option>
+                    </select>
+                </div>
+
                 <div class="form-group">
                     <label for="prenom">Prénom</label>
                     <input type="text" id="prenom" name="prenom" placeholder="Votre prénom" required>
@@ -44,7 +54,7 @@
 
                 <div class="form-group">
                     <label for="email">Adresse Email</label>
-                    <input type="email" id="email" name="email" placeholder="exemple@sysloc.com" required autocomplete="email">
+                    <input type="email" id="email" name="email" placeholder="exemple@ecole-maternelle.com" required autocomplete="email">
                 </div>
 
                 <div class="form-group">
@@ -59,7 +69,7 @@
 
                 <div style="margin-top: 2rem;">
                     <button type="submit" class="btn-primary" id="btnSubmit">
-                        <span>Créer mon compte</span>
+                        <span>Créer mon compte d'accès 🔒</span>
                     </button>
                 </div>
             </form>
@@ -97,7 +107,7 @@
         }
 
         btnSubmit.disabled = true;
-        btnSubmit.innerHTML = '<span>Inscription en cours...</span>';
+        btnSubmit.innerHTML = '<span>Création en cours...</span>';
 
         try {
             const res = await fetch('/api/utilisateur', {
@@ -121,9 +131,10 @@
             errorMsg.textContent = 'Erreur serveur : ' + err.message;
         } finally {
             btnSubmit.disabled = false;
-            btnSubmit.innerHTML = '<span>Créer mon compte</span>';
+            btnSubmit.innerHTML = '<span>Créer mon compte d\'accès 🔒</span>';
         }
     });
 </script>
 </body>
 </html>
+
