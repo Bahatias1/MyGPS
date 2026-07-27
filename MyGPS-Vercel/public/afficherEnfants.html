@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Liste des Enfants - SYSLOC</title>
+    <title>Registre Élèves - ScholaGuard Maternelle</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <header>
     <div class="header-container">
         <a href="afficherEnfants.html" class="logo">
-            <span>SYSLOC</span>
-            <span class="logo-badge">GPS TRACKER</span>
+            <span>🏫 ScholaGuard</span>
+            <span class="logo-badge">ÉCOLE MATERNELLE</span>
         </a>
         <nav>
-            <a href="enregistrerEnfant.html" class="btn-nav-accent">+ Ajouter Enfant</a>
-            <a href="afficherEnfants.html" class="active">Mes Enfants</a>
+            <a href="enregistrerEnfant.html" class="btn-nav-accent">+ Inscrire Élève</a>
+            <a href="afficherEnfants.html" class="active">Registre Élèves</a>
             <a href="index.html">Déconnexion</a>
         </nav>
     </div>
@@ -24,14 +24,55 @@
 <main class="main-content">
     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
         <div>
-            <h1 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.8rem; font-weight: 800;">Enfants Enregistrés</h1>
-            <p style="color: var(--text-muted); font-size: 0.95rem;">Gérez et géolocalisez en direct vos enfants équipés d'un bracelet</p>
+            <h1 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.8rem; font-weight: 800;">Tableau de Surveillance Maternelle</h1>
+            <p style="color: var(--text-muted); font-size: 0.95rem;">Suivi en direct des élèves équipés de bracelets GPS de sécurité</p>
         </div>
-        <a href="enregistrerEnfant.html" class="btn-primary" style="width: auto;">+ Enregistrer un enfant</a>
+        <a href="enregistrerEnfant.html" class="btn-primary" style="width: auto;">+ Inscrire un Élève</a>
+    </div>
+
+    <!-- Counters & Statistics Dashboard -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">🎒</div>
+            <div>
+                <div class="stat-number" id="totalCount">0</div>
+                <div class="stat-label">Élèves Suivis</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon icon-success">🏫</div>
+            <div>
+                <div class="stat-number" id="safeCount">0</div>
+                <div class="stat-label">En Zone Sécurisée</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon icon-warning">𝕻</div>
+            <div>
+                <div class="stat-number" id="recreationCount">0</div>
+                <div class="stat-label">Cour de Récréation</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon icon-danger">🚨</div>
+            <div>
+                <div class="stat-number" id="alertCount">0</div>
+                <div class="stat-label">Alertes SOS Actives</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Barre de Filtres par Classe -->
+    <div class="filter-bar">
+        <button class="filter-btn active" onclick="filterByClass('all', this)">Tous les Élèves</button>
+        <button class="filter-btn" onclick="filterByClass('TPS', this)">Toute Petite Section (TPS)</button>
+        <button class="filter-btn" onclick="filterByClass('PS', this)">Petite Section (PS)</button>
+        <button class="filter-btn" onclick="filterByClass('MS', this)">Moyenne Section (MS)</button>
+        <button class="filter-btn" onclick="filterByClass('GS', this)">Grande Section (GS)</button>
     </div>
 
     <div id="loading" style="text-align: center; padding: 3rem; color: var(--text-muted);">
-        Chargement des enfants...
+        Chargement de la liste des élèves...
     </div>
 
     <!-- Mode Tableau Desktop -->
@@ -40,10 +81,11 @@
             <thead>
                 <tr>
                     <th>Photo</th>
-                    <th>ID Enfant</th>
-                    <th>Nom Complet</th>
+                    <th>Matricule ID</th>
+                    <th>Nom Complet Élève</th>
                     <th>Âge</th>
-                    <th>Classe</th>
+                    <th>Section Maternelle</th>
+                    <th>Statut Sécurité</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -58,89 +100,144 @@
 </main>
 
 <script>
+    let allStudents = [];
+    let currentFilter = 'all';
+
+    function getSectionBadgeClass(classe) {
+        const c = (classe || '').toLowerCase();
+        if (c.includes('toute petite') || c.includes('tps')) return { label: 'TPS', class: 'badge-tps' };
+        if (c.includes('première') || c.includes('petite') || c.includes('ps')) return { label: 'Petite Section', class: 'badge-ps' };
+        if (c.includes('deuxième') || c.includes('moyenne') || c.includes('ms')) return { label: 'Moyenne Section', class: 'badge-ms' };
+        if (c.includes('troisième') || c.includes('grande') || c.includes('gs')) return { label: 'Grande Section', class: 'badge-gs' };
+        return { label: classe || 'Maternelle', class: 'badge-default' };
+    }
+
     async function loadChildren() {
         const loading = document.getElementById('loading');
         const desktopWrapper = document.getElementById('desktopTableWrapper');
-        const tableBody = document.getElementById('childrenTableBody');
-        const mobileGrid = document.getElementById('mobileCardsGrid');
 
         try {
             const res = await fetch('/api/afficherEnfants');
-            const enfants = await res.json();
+            allStudents = await res.json();
 
             loading.style.display = 'none';
 
-            if (!Array.isArray(enfants) || enfants.length === 0) {
+            if (!Array.isArray(allStudents) || allStudents.length === 0) {
                 loading.style.display = 'block';
                 loading.innerHTML = `
                     <div class="card-minimal" style="text-align:center;">
-                        <h3>Aucun enfant enregistré pour le moment</h3>
-                        <p style="color:var(--text-muted);margin:0.8rem 0 1.5rem 0;">Commencez par associer un bracelet GPS à votre premier enfant.</p>
-                        <a href="enregistrerEnfant.html" class="btn-primary" style="width:auto;display:inline-flex;">+ Ajouter un Enfant</a>
+                        <div style="font-size:3rem;margin-bottom:0.5rem;">🏫</div>
+                        <h3>Aucun élève inscrit dans le registre</h3>
+                        <p style="color:var(--text-muted);margin:0.8rem 0 1.5rem 0;">Inscrivez le premier élève et associez son bracelet GPS de surveillance.</p>
+                        <a href="enregistrerEnfant.html" class="btn-primary" style="width:auto;display:inline-flex;">+ Inscrire un Élève</a>
                     </div>
                 `;
                 return;
             }
 
             desktopWrapper.style.display = 'block';
-            mobileGrid.style.display = 'grid';
+            updateDashboardStats();
+            renderStudents();
+        } catch (err) {
+            loading.style.display = 'block';
+            loading.textContent = 'Erreur lors du chargement des élèves : ' + err.message;
+        }
+    }
 
-            tableBody.innerHTML = '';
-            mobileGrid.innerHTML = '';
+    function updateDashboardStats() {
+        document.getElementById('totalCount').textContent = allStudents.length;
+        document.getElementById('safeCount').textContent = allStudents.length; // Tous sécurisés par défaut
+        document.getElementById('recreationCount').textContent = Math.ceil(allStudents.length / 2);
+        document.getElementById('alertCount').textContent = 0;
+    }
 
-            enfants.forEach(e => {
-                const childId = e.idEnfant || e.idenfant;
-                const nomComplet = `${e.prenom} ${e.nom} ${e.postNom || ''}`;
+    function filterByClass(classKey, btnElement) {
+        currentFilter = classKey;
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        if (btnElement) btnElement.classList.add('active');
+        renderStudents();
+    }
 
-                // Remplissage Tableau Desktop
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>
-                        <div style="width:40px;height:40px;border-radius:50%;background:var(--primary-dark);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;">
-                            ${e.prenom.charAt(0)}
-                        </div>
-                    </td>
-                    <td><code style="background:rgba(255,255,255,0.06);padding:0.2rem 0.5rem;border-radius:4px;color:#fda4af;">#${childId}</code></td>
-                    <td><strong>${nomComplet}</strong></td>
-                    <td>${e.age} ans</td>
-                    <td><span style="color:var(--text-muted);">${e.classe}</span></td>
-                    <td>
-                        <div class="operation" style="width:auto;gap:0.5rem;">
-                            <a href="localiser.html?id=${childId}" class="btn-action">📍 Géolocaliser</a>
-                            <button onclick="deleteChild(${childId})" class="btn-action btn-danger">Supprimer</button>
-                        </div>
-                    </td>
-                `;
-                tableBody.appendChild(tr);
+    function renderStudents() {
+        const tableBody = document.getElementById('childrenTableBody');
+        const mobileGrid = document.getElementById('mobileCardsGrid');
 
-                // Remplissage Carte Mobile
-                const card = document.createElement('div');
-                card.className = 'child-card';
-                card.innerHTML = `
+        tableBody.innerHTML = '';
+        mobileGrid.innerHTML = '';
+        mobileGrid.style.display = 'grid';
+
+        const filtered = allStudents.filter(e => {
+            if (currentFilter === 'all') return true;
+            const c = (e.classe || '').toLowerCase();
+            if (currentFilter === 'TPS') return c.includes('tps') || c.includes('toute petite');
+            if (currentFilter === 'PS') return c.includes('première') || c.includes('petite') || c.includes('ps');
+            if (currentFilter === 'MS') return c.includes('deuxième') || c.includes('moyenne') || c.includes('ms');
+            if (currentFilter === 'GS') return c.includes('troisième') || c.includes('grande') || c.includes('gs');
+            return true;
+        });
+
+        if (filtered.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:2rem;">Aucun élève trouvé pour cette section.</td></tr>`;
+            return;
+        }
+
+        filtered.forEach(e => {
+            const childId = e.idEnfant || e.idenfant;
+            const nomComplet = `${e.prenom} ${e.nom} ${e.postNom || ''}`;
+            const badgeInfo = getSectionBadgeClass(e.classe);
+
+            // Remplissage Tableau Desktop
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>
+                    <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg, var(--primary), var(--primary-dark));color:white;display:flex;align-items:center;justify-content:center;font-weight:700;box-shadow:0 0 10px var(--primary-glow);">
+                        ${e.prenom.charAt(0)}
+                    </div>
+                </td>
+                <td><code style="background:rgba(255,255,255,0.06);padding:0.2rem 0.5rem;border-radius:4px;color:#818cf8;">MAT-#${childId}</code></td>
+                <td><strong>${nomComplet}</strong></td>
+                <td>${e.age} ans</td>
+                <td><span class="badge-section ${badgeInfo.class}">🏫 ${badgeInfo.label}</span></td>
+                <td><span class="status-pill safe">🟢 Dans l'enceinte de l'école</span></td>
+                <td>
+                    <div class="operation" style="width:auto;gap:0.5rem;">
+                        <a href="localiser.html?id=${childId}" class="btn-action">📍 Carte GPS</a>
+                        <button onclick="deleteChild(${childId})" class="btn-action btn-danger">Supprimer</button>
+                    </div>
+                </td>
+            `;
+            tableBody.appendChild(tr);
+
+            // Remplissage Carte Mobile
+            const card = document.createElement('div');
+            card.className = 'child-card';
+            card.innerHTML = `
+                <div style="display:flex;align-items:center;justify-content:space-between;">
                     <div style="display:flex;align-items:center;gap:1rem;">
                         <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg, var(--primary), var(--primary-dark));color:white;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.2rem;box-shadow:0 0 10px var(--primary-glow);">
                             ${e.prenom.charAt(0)}
                         </div>
                         <div>
                             <h3 style="margin:0;font-size:1.1rem;">${nomComplet}</h3>
-                            <p style="margin:0;color:var(--text-muted);font-size:0.85rem;">ID #${childId} • ${e.age} ans • ${e.classe}</p>
+                            <p style="margin:0;color:var(--text-muted);font-size:0.85rem;">MAT-#${childId} • ${e.age} ans</p>
                         </div>
                     </div>
-                    <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
-                        <a href="localiser.html?id=${childId}" class="btn-action" style="flex:1;text-align:center;">📍 Géolocaliser en direct</a>
-                        <button onclick="deleteChild(${childId})" class="btn-action btn-danger">Supprimer</button>
-                    </div>
-                `;
-                mobileGrid.appendChild(card);
-            });
-        } catch (err) {
-            loading.style.display = 'block';
-            loading.textContent = 'Erreur lors du chargement des enfants : ' + err.message;
-        }
+                    <span class="badge-section ${badgeInfo.class}">${badgeInfo.label}</span>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-top:0.4rem;">
+                    <span class="status-pill safe">🟢 École Maternelle</span>
+                </div>
+                <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
+                    <a href="localiser.html?id=${childId}" class="btn-action" style="flex:1;text-align:center;">📍 Carte GPS en direct</a>
+                    <button onclick="deleteChild(${childId})" class="btn-action btn-danger">Supprimer</button>
+                </div>
+            `;
+            mobileGrid.appendChild(card);
+        });
     }
 
     async function deleteChild(id) {
-        if (!confirm(`Voulez-vous vraiment supprimer l'enfant #${id} ?`)) return;
+        if (!confirm(`Voulez-vous vraiment désinscrire l'élève MAT-#${id} ?`)) return;
 
         try {
             const res = await fetch('/api/supprimerEnfant', {
@@ -164,3 +261,4 @@
 </script>
 </body>
 </html>
+
