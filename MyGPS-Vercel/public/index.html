@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Connexion - SYSLOC (MyGPS)</title>
+    <title>ScholaGuard Maternelle - Portail de Surveillance Scolaire</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <header>
     <div class="header-container">
         <a href="index.html" class="logo">
-            <span>SYSLOC</span>
-            <span class="logo-badge">GPS TRACKER</span>
+            <span>🏫 ScholaGuard</span>
+            <span class="logo-badge">ÉCOLE MATERNELLE</span>
         </a>
         <nav>
             <a href="index.html" class="active">Connexion</a>
-            <a href="utilisateur.html">Inscription</a>
+            <a href="utilisateur.html">Créer un Compte</a>
         </nav>
     </div>
 </header>
@@ -24,16 +24,17 @@
     <div class="form-card-wrapper">
         <div class="card-minimal">
             <div class="form-header">
-                <h2>Connexion Parent</h2>
-                <p>Accédez au suivi en temps réel de votre enfant</p>
+                <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🎒</div>
+                <h2>Portail École Maternelle</h2>
+                <p>Système de surveillance & géolocalisation des élèves en temps réel</p>
             </div>
 
             <div id="errorMsg" class="alert alert-error" style="display: none;"></div>
 
             <form id="loginForm">
                 <div class="form-group">
-                    <label for="email">Adresse Email</label>
-                    <input type="email" id="email" name="email" placeholder="admin@sysloc.com" required autocomplete="email">
+                    <label for="email">Adresse Email Pro / Parent</label>
+                    <input type="email" id="email" name="email" placeholder="directeur@ecole-maternelle.com" required autocomplete="email">
                 </div>
 
                 <div class="form-group">
@@ -43,15 +44,15 @@
 
                 <div style="margin-top: 2rem;">
                     <button type="submit" class="btn-primary" id="btnSubmit">
-                        <span>Se connecter</span>
+                        <span>Accéder à l'Espace de Surveillance 🔒</span>
                     </button>
                 </div>
             </form>
 
             <div style="text-align: center; margin-top: 1.5rem;">
                 <p style="color: var(--text-dim); font-size: 0.9rem;">
-                    Vous n'avez pas de compte ? 
-                    <a href="utilisateur.html" style="color: var(--primary-hover); text-decoration: none; font-weight: 600;">Inscrivez-vous</a>
+                    Nouveau compte (Enseignant / Direction / Parent) ? 
+                    <a href="utilisateur.html" style="color: var(--primary-hover); text-decoration: none; font-weight: 600;">Inscrivez-vous ici</a>
                 </p>
             </div>
         </div>
