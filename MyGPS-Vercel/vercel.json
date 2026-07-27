@@ -3,6 +3,7 @@
   "rewrites": [
     { "source": "/dbwrite.php", "destination": "/api/gps" },
     { "source": "/dbwrite", "destination": "/api/gps" },
+    { "source": "/api/statusBracelet", "destination": "/api/statusBracelet" },
     { "source": "/", "destination": "/index.html" }
   ]
 }
