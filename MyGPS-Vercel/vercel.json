@@ -1,6 +1,8 @@
 {
   "cleanUrls": true,
   "rewrites": [
+    { "source": "/dbwrite.php", "destination": "/api/gps" },
+    { "source": "/dbwrite", "destination": "/api/gps" },
     { "source": "/", "destination": "/index.html" }
   ]
 }
