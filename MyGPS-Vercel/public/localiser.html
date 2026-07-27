@@ -14,9 +14,8 @@
             border: 1px solid var(--border-color);
             box-shadow: var(--shadow-card);
         }
-        .leaflet-container {
-            background: #0b0f19 !important;
-        }
+        .leaflet-container { background: #0b0f19 !important; }
+
         .info-card-minimal {
             background: var(--bg-card);
             backdrop-filter: blur(16px);
@@ -31,6 +30,7 @@
             flex-wrap: wrap;
             gap: 1rem;
         }
+
         .live-badge {
             display: inline-flex;
             align-items: center;
@@ -41,10 +41,22 @@
             font-weight: 600;
             font-size: 0.85rem;
             border: 1px solid rgba(16, 185, 129, 0.3);
+            transition: all 0.3s ease;
         }
+        .live-badge.status-alert {
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+            border-color: rgba(239, 68, 68, 0.5);
+            animation: alertFlash 1s infinite alternate;
+        }
+        .live-badge.status-offline {
+            background: rgba(107, 114, 128, 0.15);
+            color: #9ca3af;
+            border-color: rgba(107, 114, 128, 0.3);
+        }
+
         .dot {
-            height: 10px;
-            width: 10px;
+            height: 10px; width: 10px;
             background-color: #10b981;
             border-radius: 50%;
             display: inline-block;
@@ -56,19 +68,21 @@
             70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
             100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
         }
-        .status-alert {
-            background: rgba(239, 68, 68, 0.2);
-            color: #fca5a5;
-            border-color: rgba(239, 68, 68, 0.5);
-            animation: alertFlash 1s infinite alternate;
-        }
-        .status-alert .dot {
-            background-color: #ef4444;
-        }
         @keyframes alertFlash {
-            from { box-shadow: 0 0 5px rgba(239, 68, 68, 0.3); }
-            to { box-shadow: 0 0 20px rgba(239, 68, 68, 0.8); }
+            from { box-shadow: 0 0 5px rgba(239,68,68,0.3); }
+            to   { box-shadow: 0 0 20px rgba(239,68,68,0.8); }
         }
+        @keyframes pulseRed {
+            0% { box-shadow: 0 0 0 0 rgba(239,68,68,0.7); }
+            70% { box-shadow: 0 0 0 8px rgba(239,68,68,0); }
+            100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+        }
+        @keyframes pulseYellow {
+            0% { box-shadow: 0 0 0 0 rgba(245,158,11,0.7); }
+            70% { box-shadow: 0 0 0 8px rgba(245,158,11,0); }
+            100% { box-shadow: 0 0 0 0 rgba(245,158,11,0); }
+        }
+
         .school-geofence-banner {
             background: rgba(99, 102, 241, 0.12);
             border: 1px solid rgba(99, 102, 241, 0.3);
@@ -80,7 +94,115 @@
             justify-content: space-between;
             color: var(--text-main);
             font-size: 0.9rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
         }
+
+        /* ========== BRACELET DIAGNOSTIC PANEL ========== */
+        .bracelet-diagnostic {
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow-card);
+        }
+        .bracelet-diagnostic-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.2rem;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+        }
+        .bracelet-diagnostic-title {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+        .diagnostic-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+            gap: 0.9rem;
+        }
+        .diagnostic-item {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 0.9rem 1rem;
+        }
+        .diagnostic-item-label {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+            margin-bottom: 0.35rem;
+        }
+        .diagnostic-item-value {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-main);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .dv-connected { color: #34d399 !important; }
+        .dv-idle      { color: #fbbf24 !important; }
+        .dv-offline   { color: #9ca3af !important; }
+        .dv-alert     { color: #f87171 !important; }
+
+        .bracelet-status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.45rem 0.9rem;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            border: 1px solid;
+            transition: all 0.4s ease;
+        }
+        .bsi-connected { background: rgba(16,185,129,.15); color: #34d399; border-color: rgba(16,185,129,.4); }
+        .bsi-idle      { background: rgba(245,158,11,.12); color: #fbbf24; border-color: rgba(245,158,11,.35); }
+        .bsi-offline   { background: rgba(107,114,128,.12); color: #9ca3af; border-color: rgba(107,114,128,.3); }
+        .bsi-error     { background: rgba(239,68,68,.15);  color: #f87171; border-color: rgba(239,68,68,.4); }
+
+        .diag-dot {
+            height: 9px; width: 9px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .diag-dot.connected { background: #10b981; animation: pulse 1.5s infinite; }
+        .diag-dot.idle      { background: #f59e0b; animation: pulseYellow 2s infinite; }
+        .diag-dot.offline   { background: #6b7280; }
+        .diag-dot.error     { background: #ef4444; animation: pulseRed 1s infinite; }
+
+        .refresh-btn {
+            background: rgba(99,102,241,.15);
+            border: 1px solid rgba(99,102,241,.3);
+            color: #818cf8;
+            padding: 0.4rem 0.9rem;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-size: 0.82rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .refresh-btn:hover { background: rgba(99,102,241,.25); color: #a5b4fc; }
+
+        .diag-message {
+            margin-top: 1rem;
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius-md);
+            font-size: 0.83rem;
+            border: 1px solid;
+            display: none;
+        }
+        .diag-message.error   { background: rgba(239,68,68,.1);  color: #fca5a5; border-color: rgba(239,68,68,.3); }
+        .diag-message.warning { background: rgba(245,158,11,.1); color: #fbbf24; border-color: rgba(245,158,11,.3); }
+        .diag-message.info    { background: rgba(99,102,241,.1); color: #a5b4fc; border-color: rgba(99,102,241,.3); }
+        .diag-message.success { background: rgba(16,185,129,.1); color: #34d399; border-color: rgba(16,185,129,.3); }
     </style>
 </head>
 <body>
@@ -99,20 +221,67 @@
 </header>
 
 <main class="main-content">
+
+    <!-- Infos Élève + Badge Live -->
     <div class="info-card-minimal" id="childDetails">
         <div>
-            <h2 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.5rem; font-weight: 800; color: var(--text-main);">Détails de l'élève</h2>
-            <p style="color: var(--text-muted); font-size: 0.9rem;">Chargement des données de géolocalisation du bracelet GPS...</p>
+            <h2 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.5rem;font-weight:800;color:var(--text-main);margin:0;">
+                Détails de l'élève
+            </h2>
+            <p style="color:var(--text-muted);font-size:0.9rem;margin:0.3rem 0 0 0;">
+                Chargement des données de géolocalisation du bracelet GPS...
+            </p>
         </div>
         <div class="live-badge" id="liveBadge">
             <span class="dot"></span> Connexion au Bracelet GPS...
         </div>
     </div>
 
+    <!-- ========== PANNEAU DIAGNOSTIC BRACELET GPS ========== -->
+    <div class="bracelet-diagnostic">
+        <div class="bracelet-diagnostic-header">
+            <div class="bracelet-diagnostic-title">📡 Diagnostic Bracelet GPS ESP8266</div>
+            <div style="display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap;">
+                <div class="bracelet-status-indicator bsi-offline" id="braceletStatusIndicator">
+                    <span class="diag-dot offline" id="braceletDot"></span>
+                    <span id="braceletStatusText">Vérification...</span>
+                </div>
+                <button class="refresh-btn" onclick="checkBraceletStatus()">↻ Actualiser</button>
+            </div>
+        </div>
+        <div class="diagnostic-grid">
+            <div class="diagnostic-item">
+                <div class="diagnostic-item-label">Statut Connexion</div>
+                <div class="diagnostic-item-value dv-offline" id="diagStatus">—</div>
+            </div>
+            <div class="diagnostic-item">
+                <div class="diagnostic-item-label">Élève Assigné (Dernier Inscrit)</div>
+                <div class="diagnostic-item-value" id="diagEleve">—</div>
+            </div>
+            <div class="diagnostic-item">
+                <div class="diagnostic-item-label">Dernière Transmission Reçue</div>
+                <div class="diagnostic-item-value" id="diagLastSeen">—</div>
+            </div>
+            <div class="diagnostic-item">
+                <div class="diagnostic-item-label">Position GPS Actuelle</div>
+                <div class="diagnostic-item-value" id="diagCoords" style="font-size:0.82rem;word-break:break-all;">—</div>
+            </div>
+            <div class="diagnostic-item">
+                <div class="diagnostic-item-label">Bouton SOS / Alerte</div>
+                <div class="diagnostic-item-value" id="diagEtat">—</div>
+            </div>
+            <div class="diagnostic-item">
+                <div class="diagnostic-item-label">Total Positions Enregistrées</div>
+                <div class="diagnostic-item-value" id="diagTotal">—</div>
+            </div>
+        </div>
+        <div class="diag-message" id="diagMessage"></div>
+    </div>
+
     <!-- Geofencing & Safety Status Bar -->
     <div class="school-geofence-banner" id="geofenceBanner">
         <div>
-            <strong>📍 Enceinte Scolaire Sécurisée :</strong> École Maternelle (Rayon de surveillance 300m)
+            <strong>📍 Enceinte Scolaire Sécurisée :</strong> CS Mama Mulzei (Rayon de surveillance 300m)
         </div>
         <div id="geofenceStatus">
             <span class="status-pill safe">🟢 Dans l'enceinte de l'école</span>
@@ -121,15 +290,15 @@
 
     <div id="map"></div>
 
-    <!-- Section Historique des Déplacements -->
-    <div class="table-container" style="margin-top: 2rem;">
-        <div style="padding: 1.2rem 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
-            <h3 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.2rem; font-weight: 700; margin: 0; color: var(--text-main);">
+    <!-- Historique des Déplacements -->
+    <div class="table-container" style="margin-top:2rem;">
+        <div style="padding:1.2rem 1.5rem;border-bottom:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;">
+            <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.2rem;font-weight:700;margin:0;color:var(--text-main);">
                 📜 Historique des Déplacements de l'Élève
             </h3>
-            <span style="font-size: 0.85rem; color: var(--text-muted);" id="historyCountBadge">0 positions enregistrées</span>
+            <span style="font-size:0.85rem;color:var(--text-muted);" id="historyCountBadge">0 positions enregistrées</span>
         </div>
-        <div style="overflow-x: auto;">
+        <div style="overflow-x:auto;">
             <table class="tableAff">
                 <thead>
                     <tr>
@@ -147,227 +316,270 @@
             </table>
         </div>
     </div>
+
 </main>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
     const urlParams = new URLSearchParams(window.location.search);
-    // Si aucun id dans l'URL, childId vaut 0 => L'API chargera automatiquement le tout dernier élève inscrit !
     const childId = urlParams.get('id') || 0;
 
-    // Coordonnées du centre de l'École Maternelle
+    // Coordonnées de l'École CS Mama Mulzei
     const SCHOOL_LAT = -1.6585;
     const SCHOOL_LNG = 29.2203;
 
-    // Initialiser la carte Leaflet sur Goma
+    // Carte Leaflet
     const map = L.map('map').setView([SCHOOL_LAT, SCHOOL_LNG], 16);
-
-    // Couche OpenStreetMap en Mode Sombre/Minimal Voyage
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
         maxZoom: 19,
         attribution: '© OpenStreetMap © CARTO'
     }).addTo(map);
 
-    // 1. Représentation visuelle de la zone sécurisée de l'École Maternelle (Geofencing 300m)
+    // Zone geofencing (300m)
     const schoolCircle = L.circle([SCHOOL_LAT, SCHOOL_LNG], {
-        color: '#6366f1',
-        fillColor: '#6366f1',
-        fillOpacity: 0.12,
-        weight: 2,
-        dashArray: '5, 8',
-        radius: 300
+        color: '#6366f1', fillColor: '#6366f1', fillOpacity: 0.1,
+        weight: 2, dashArray: '5, 8', radius: 300
     }).addTo(map);
+    schoolCircle.bindPopup('<div style="text-align:center;color:#0f172a;"><strong>🏫 Enceinte CS Mama Mulzei</strong><br>Zone Sécurisée (Rayon 300m)</div>');
 
-    schoolCircle.bindPopup(`
-        <div style="text-align:center;color:#0f172a;">
-            <strong>🏫 Enceinte École Maternelle</strong><br>
-            Zone Sécurisée (Rayon 300m)
-        </div>
-    `);
-
-    // Marqueur fixe pour le bâtiment de l'école maternelle
-    const schoolIconMarker = L.marker([SCHOOL_LAT, SCHOOL_LNG]).addTo(map);
-    schoolIconMarker.bindPopup(`
-        <div style="text-align:center;color:#0f172a;">
-            <strong style="font-size:1.1em;color:#4f46e5;">🏫 École Maternelle</strong><br>
-            Bâtiment Principal & Cour de Récréation
-        </div>
-    `);
+    // Marqueur École
+    L.marker([SCHOOL_LAT, SCHOOL_LNG]).addTo(map)
+      .bindPopup('<div style="text-align:center;color:#0f172a;"><strong style="color:#4f46e5;">🏫 CS Mama Mulzei</strong><br>Bâtiment Principal & Cour de Récréation</div>');
 
     let currentMarker = null;
     let pathPolyline = null;
     let historyLayerGroup = L.layerGroup().addTo(map);
     let isFirstLoad = true;
 
-    // Calcul de distance pour le Geofencing (en mètres)
     function calculateDistance(lat1, lon1, lat2, lon2) {
-        const R = 6371e3; // Rayon terre en mètres
-        const φ1 = lat1 * Math.PI/180;
-        const φ2 = lat2 * Math.PI/180;
-        const Δφ = (lat2-lat1) * Math.PI/180;
-        const Δλ = (lon2-lon1) * Math.PI/180;
-
-        const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-                  Math.cos(φ1) * Math.cos(φ2) *
-                  Math.sin(Δλ/2) * Math.sin(Δλ/2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        return R * c;
+        const R = 6371e3;
+        const φ1 = lat1 * Math.PI / 180, φ2 = lat2 * Math.PI / 180;
+        const Δφ = (lat2 - lat1) * Math.PI / 180;
+        const Δλ = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(Δφ/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)**2;
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
-    function zoomToPosition(lat, lng, stepIndex) {
+    function zoomToPosition(lat, lng, step) {
         map.setView([lat, lng], 18);
-        L.popup()
-            .setLatLng([lat, lng])
-            .setContent(`<div style="color:#0f172a;"><strong>Étape ${stepIndex}</strong><br>Lat: ${lat}<br>Lng: ${lng}</div>`)
+        L.popup().setLatLng([lat, lng])
+            .setContent(`<div style="color:#0f172a;"><strong>Étape ${step}</strong><br>Lat: ${lat}<br>Lng: ${lng}</div>`)
             .openOn(map);
     }
 
-    async function loadTrackingData() {
+    /* ========== DIAGNOSTIC BRACELET ========== */
+    async function checkBraceletStatus() {
+        const indicator  = document.getElementById('braceletStatusIndicator');
+        const dot        = document.getElementById('braceletDot');
+        const statusText = document.getElementById('braceletStatusText');
+        const diagStatus = document.getElementById('diagStatus');
+        const diagEleve  = document.getElementById('diagEleve');
+        const diagLast   = document.getElementById('diagLastSeen');
+        const diagCoords = document.getElementById('diagCoords');
+        const diagEtat   = document.getElementById('diagEtat');
+        const diagTotal  = document.getElementById('diagTotal');
+        const diagMsg    = document.getElementById('diagMessage');
+
         try {
-            const res = await fetch(`/api/localiser?id=${childId}`);
+            const res  = await fetch('/api/statusBracelet');
             const data = await res.json();
 
-            const detailsDiv = document.getElementById('childDetails');
-            const badgeDiv = document.getElementById('liveBadge');
-            const geofenceStatusDiv = document.getElementById('geofenceStatus');
-            const historyTableBody = document.getElementById('historyTableBody');
-            const historyCountBadge = document.getElementById('historyCountBadge');
+            // Mapping statut → apparence
+            const MAP = {
+                connected:       { label: '✅ Bracelet Connecté',  bsi: 'bsi-connected', dd: 'connected', dv: 'dv-connected', diagLabel: '🟢 CONNECTÉ',          msgType: 'success', msgText: 'Bracelet GPS actif ! Les données de position sont transmises en temps réel.' },
+                data_available:  { label: '📶 Données Reçues',     bsi: 'bsi-connected', dd: 'connected', dv: 'dv-connected', diagLabel: '🟢 DONNÉES DISPONIBLES', msgType: null,    msgText: null },
+                idle:            { label: '⏸️ Bracelet Inactif',   bsi: 'bsi-idle',      dd: 'idle',      dv: 'dv-idle',      diagLabel: '⚠️ INACTIF',            msgType: 'warning', msgText: 'Le bracelet n\'a pas transmis depuis plus d\'une minute. Vérifiez la connexion WiFi (SSID: VirungAI) et l\'alimentation.' },
+                offline:         { label: '🔴 Hors Ligne',         bsi: 'bsi-offline',   dd: 'offline',   dv: 'dv-offline',   diagLabel: '🔴 HORS LIGNE',         msgType: 'error',   msgText: 'Aucune donnée GPS reçue. Vérifiez : ① ESP8266 allumé ? ② WiFi connecté ? ③ Supabase accessible ? ④ Code Arduino flashé ?' },
+                demo:            { label: '🎮 Mode Démo',           bsi: 'bsi-connected', dd: 'connected', dv: 'dv-connected', diagLabel: '🎮 MODE DÉMO',          msgType: 'info',    msgText: 'Mode démo actif – les données sont simulées. Connectez Supabase pour recevoir les vraies coordonnées GPS du bracelet.' },
+                error:           { label: '❌ Erreur API',          bsi: 'bsi-error',     dd: 'error',     dv: 'dv-alert',     diagLabel: '❌ ERREUR',             msgType: 'error',   msgText: 'Erreur de diagnostic : ' + (data.error || 'inconnue') }
+            };
 
-            if (data.enfant) {
-                detailsDiv.children[0].innerHTML = `
-                    <h2 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.5rem;font-weight:800;color:var(--text-main);margin:0;">Élève suivi : ${data.enfant.prenom} ${data.enfant.nom} ${data.enfant.postNom || ''}</h2>
-                    <p style="margin:5px 0 0 0;color:var(--text-muted);font-size:0.9rem;"><strong>Matricule :</strong> MAT-#${data.enfant.idEnfant} | <strong>Section Maternelle :</strong> ${data.enfant.classe} (${data.enfant.age} ans)</p>
-                `;
+            const s = MAP[data.status] || MAP['offline'];
+
+            // Réinitialiser les classes de l'indicateur principal
+            indicator.className = 'bracelet-status-indicator ' + s.bsi;
+            dot.className       = 'diag-dot ' + s.dd;
+            statusText.textContent = s.label;
+
+            diagStatus.textContent = s.diagLabel;
+            diagStatus.className   = 'diagnostic-item-value ' + s.dv;
+
+            // Élève assigné
+            if (data.dernierEleve) {
+                diagEleve.textContent = `${data.dernierEleve.prenom} ${data.dernierEleve.nom} — MAT-#${data.dernierEleve.idEnfant}`;
+                diagEleve.className   = 'diagnostic-item-value dv-connected';
+            } else {
+                diagEleve.textContent = 'Aucun élève inscrit';
+                diagEleve.className   = 'diagnostic-item-value dv-offline';
             }
 
-            if (data.positions && data.positions.length > 0) {
-                // Filtrer les positions valides
-                const validPositions = data.positions.filter(p => parseFloat(p.latitude) !== 0 && parseFloat(p.longitude) !== 0);
-                const posList = validPositions.length > 0 ? validPositions : data.positions;
+            // Dernière transmission
+            diagLast.textContent = data.lastSeenText || '—';
+            diagLast.className   = 'diagnostic-item-value ' +
+                (data.lastSeenSeconds !== null && data.lastSeenSeconds < 60 ? 'dv-connected' :
+                 data.lastSeenSeconds !== null ? 'dv-idle' : '');
 
-                historyCountBadge.textContent = `${posList.length} positions enregistrées`;
-
-                // Toute dernière position reçue du bracelet
-                const lastPos = posList[posList.length - 1];
-                const lastLat = parseFloat(lastPos.latitude);
-                const lastLng = parseFloat(lastPos.longitude);
-
-                const isSosAlert = parseInt(lastPos.etat) === 1;
-                const distanceToSchool = calculateDistance(lastLat, lastLng, SCHOOL_LAT, SCHOOL_LNG);
-                const isInsideGeofence = distanceToSchool <= 300;
-
-                // Mise à jour des badges d'alerte et de geofence
-                if (isSosAlert) {
-                    badgeDiv.className = "live-badge status-alert";
-                    badgeDiv.innerHTML = `<span class="dot"></span> 🚨 ALERTE DANGER / BOUTON SOS PRESSÉ`;
-                    geofenceStatusDiv.innerHTML = `<span class="status-pill danger">🚨 ALERTE SOS ACTIVÉE !</span>`;
-                } else if (!isInsideGeofence) {
-                    badgeDiv.className = "live-badge status-alert";
-                    badgeDiv.innerHTML = `<span class="dot"></span> ⚠️ HORS PÉRIMÈTRE SCOLAIRE (${Math.round(distanceToSchool)}m)`;
-                    geofenceStatusDiv.innerHTML = `<span class="status-pill danger">⚠️ Sortie de l'enceinte école (${Math.round(distanceToSchool)}m)</span>`;
+            // Position GPS
+            if (data.dernierePosition) {
+                const p = data.dernierePosition;
+                diagCoords.textContent = `${p.latitude.toFixed(6)}, ${p.longitude.toFixed(6)}`;
+                diagCoords.className   = 'diagnostic-item-value dv-connected';
+                if (p.etat === 1) {
+                    diagEtat.textContent = '🚨 ALERTE SOS ACTIVE';
+                    diagEtat.className   = 'diagnostic-item-value dv-alert';
                 } else {
-                    badgeDiv.className = "live-badge";
-                    badgeDiv.innerHTML = `<span class="dot"></span> En Direct (${posList.length} positions GPS)`;
-                    geofenceStatusDiv.innerHTML = `<span class="status-pill safe">🟢 En zone sécurisée école (${Math.round(distanceToSchool)}m)</span>`;
-                }
-
-                // 1. Points de passage historiques sur la carte & Tableau
-                historyLayerGroup.clearLayers();
-                historyTableBody.innerHTML = '';
-
-                const latLngs = [];
-
-                posList.forEach((p, idx) => {
-                    const lat = parseFloat(p.latitude);
-                    const lng = parseFloat(p.longitude);
-                    const dist = Math.round(calculateDistance(lat, lng, SCHOOL_LAT, SCHOOL_LNG));
-                    const isAlertPoint = parseInt(p.etat) === 1;
-                    latLngs.push([lat, lng]);
-
-                    if (idx < posList.length - 1) {
-                        const circle = L.circleMarker([lat, lng], {
-                            radius: 5,
-                            fillColor: isAlertPoint ? '#ef4444' : '#6366f1',
-                            color: '#ffffff',
-                            weight: 1,
-                            opacity: 0.9,
-                            fillOpacity: 0.8
-                        });
-                        circle.bindPopup(`
-                            <div style="color:#0f172a;">
-                                <strong>Étape ${idx + 1} / ${posList.length}</strong><br>
-                                Lat: ${lat}<br>Lng: ${lng}<br>
-                                Statut: ${isAlertPoint ? '<span style="color:red;font-weight:bold;">SOS</span>' : '<span style="color:green;font-weight:bold;">Normal</span>'}
-                            </div>
-                        `);
-                        historyLayerGroup.addLayer(circle);
-                    }
-
-                    // Remplissage du tableau d'historique (du plus récent au plus ancien)
-                    const tr = document.createElement('tr');
-                    const isLast = idx === posList.length - 1;
-                    tr.innerHTML = `
-                        <td><strong>${idx + 1} ${isLast ? '📍 (Actuel)' : ''}</strong></td>
-                        <td><code>${lat.toFixed(6)}</code></td>
-                        <td><code>${lng.toFixed(6)}</code></td>
-                        <td>${dist}m de l'école</td>
-                        <td>
-                            ${isAlertPoint ? '<span class="status-pill danger">🚨 ALERTE SOS</span>' : (dist <= 300 ? '<span class="status-pill safe">🟢 En zone</span>' : '<span class="status-pill transit">⚠️ Hors zone</span>')}
-                        </td>
-                        <td>
-                            <button onclick="zoomToPosition(${lat}, ${lng}, ${idx + 1})" class="btn-action" style="padding:0.2rem 0.6rem;font-size:0.8rem;">🎯 Voir sur carte</button>
-                        </td>
-                    `;
-                    historyTableBody.insertBefore(tr, historyTableBody.firstChild);
-                });
-
-                // 2. Ligne de trajectoire (Polyline)
-                if (pathPolyline) {
-                    pathPolyline.setLatLngs(latLngs);
-                } else {
-                    pathPolyline = L.polyline(latLngs, {
-                        color: '#6366f1',
-                        weight: 4,
-                        opacity: 0.85,
-                        dashArray: '6, 6'
-                    }).addTo(map);
-                }
-
-                // 3. Marqueur principal Position Actuelle de l'Élève
-                const currentLatLng = [lastLat, lastLng];
-
-                if (currentMarker) {
-                    currentMarker.setLatLng(currentLatLng);
-                } else {
-                    currentMarker = L.marker(currentLatLng).addTo(map);
-                }
-
-                currentMarker.bindPopup(`
-                    <div style="text-align:center;color:#0f172a;">
-                        <strong style="font-size:1.1em;color:#4f46e5;">🎒 Position de l'Élève en Direct</strong><br>
-                        <strong>Élève :</strong> ${data.enfant ? data.enfant.prenom + ' ' + data.enfant.nom : ''}<br>
-                        <strong>Section :</strong> ${data.enfant ? data.enfant.classe : ''}<br>
-                        <strong>Distance École :</strong> ${Math.round(distanceToSchool)} mètres<br>
-                        <strong>Statut :</strong> ${isSosAlert ? '<span style="color:red;font-weight:bold;">🚨 ALERTE SOS PRESSÉE</span>' : (isInsideGeofence ? '<span style="color:green;font-weight:bold;">🟢 En Zone Sécurisée</span>' : '<span style="color:orange;font-weight:bold;">⚠️ Hors Périmètre</span>')}
-                    </div>
-                `).openPopup();
-
-                if (isFirstLoad) {
-                    map.setView(currentLatLng, 16);
-                    isFirstLoad = false;
+                    diagEtat.textContent = '🟢 Normal – Aucune alerte';
+                    diagEtat.className   = 'diagnostic-item-value dv-connected';
                 }
             } else {
-                historyTableBody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:1.5rem;">Aucun trajet enregistré pour le moment.</td></tr>`;
+                diagCoords.textContent = 'Aucune position GPS';
+                diagCoords.className   = 'diagnostic-item-value dv-offline';
+                diagEtat.textContent   = '—';
+                diagEtat.className     = 'diagnostic-item-value dv-offline';
             }
+
+            diagTotal.textContent = `${data.totalPositions || 0} positions`;
+
+            // Message conseil
+            if (s.msgType && s.msgText) {
+                diagMsg.style.display = 'block';
+                diagMsg.className     = 'diag-message ' + s.msgType;
+                diagMsg.textContent   = s.msgText;
+            } else {
+                diagMsg.style.display = 'none';
+            }
+
         } catch (err) {
-            console.error("Erreur de chargement des positions:", err);
+            console.error('Erreur diagnostic bracelet:', err);
+            document.getElementById('braceletStatusIndicator').className = 'bracelet-status-indicator bsi-error';
+            document.getElementById('braceletDot').className = 'diag-dot error';
+            document.getElementById('braceletStatusText').textContent = '❌ Impossible de joindre le serveur';
+            const msg = document.getElementById('diagMessage');
+            msg.style.display = 'block';
+            msg.className = 'diag-message error';
+            msg.textContent = 'Erreur réseau : ' + err.message;
         }
     }
 
+    /* ========== CHARGEMENT POSITIONS GPS ========== */
+    async function loadTrackingData() {
+        try {
+            const res  = await fetch(`/api/localiser?id=${childId}`);
+            const data = await res.json();
+
+            const detailsDiv  = document.getElementById('childDetails');
+            const badgeDiv    = document.getElementById('liveBadge');
+            const geoStatus   = document.getElementById('geofenceStatus');
+            const tbody       = document.getElementById('historyTableBody');
+            const countBadge  = document.getElementById('historyCountBadge');
+
+            if (data.enfant) {
+                detailsDiv.children[0].innerHTML = `
+                    <h2 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.5rem;font-weight:800;color:var(--text-main);margin:0;">
+                        Élève suivi : ${data.enfant.prenom} ${data.enfant.nom} ${data.enfant.postNom || ''}
+                    </h2>
+                    <p style="margin:5px 0 0 0;color:var(--text-muted);font-size:0.9rem;">
+                        <strong>Matricule :</strong> MAT-#${data.enfant.idEnfant} |
+                        <strong>Section :</strong> ${data.enfant.classe} (${data.enfant.age} ans)
+                    </p>`;
+            }
+
+            if (data.positions && data.positions.length > 0) {
+                const valid   = data.positions.filter(p => parseFloat(p.latitude) !== 0 && parseFloat(p.longitude) !== 0);
+                const posList = valid.length > 0 ? valid : data.positions;
+
+                countBadge.textContent = `${posList.length} positions enregistrées`;
+
+                const lastPos = posList[posList.length - 1];
+                const lastLat = parseFloat(lastPos.latitude);
+                const lastLng = parseFloat(lastPos.longitude);
+                const isSOS   = parseInt(lastPos.etat) === 1;
+                const dist    = calculateDistance(lastLat, lastLng, SCHOOL_LAT, SCHOOL_LNG);
+                const inside  = dist <= 300;
+
+                if (isSOS) {
+                    badgeDiv.className = 'live-badge status-alert';
+                    badgeDiv.innerHTML = `<span class="dot" style="background:#ef4444;animation:pulseRed 1s infinite;"></span> 🚨 ALERTE DANGER / BOUTON SOS PRESSÉ`;
+                    geoStatus.innerHTML = `<span class="status-pill danger">🚨 ALERTE SOS ACTIVÉE !</span>`;
+                } else if (!inside) {
+                    badgeDiv.className = 'live-badge status-alert';
+                    badgeDiv.innerHTML = `<span class="dot" style="background:#f59e0b;animation:pulseYellow 2s infinite;"></span> ⚠️ HORS PÉRIMÈTRE SCOLAIRE (${Math.round(dist)}m)`;
+                    geoStatus.innerHTML = `<span class="status-pill danger">⚠️ Sortie de l'enceinte école (${Math.round(dist)}m)</span>`;
+                } else {
+                    badgeDiv.className = 'live-badge';
+                    badgeDiv.innerHTML = `<span class="dot"></span> En Direct — ${posList.length} positions GPS reçues`;
+                    geoStatus.innerHTML = `<span class="status-pill safe">🟢 En zone sécurisée école (${Math.round(dist)}m)</span>`;
+                }
+
+                historyLayerGroup.clearLayers();
+                tbody.innerHTML = '';
+                const latLngs = [];
+
+                posList.forEach((p, idx) => {
+                    const lat  = parseFloat(p.latitude);
+                    const lng  = parseFloat(p.longitude);
+                    const d    = Math.round(calculateDistance(lat, lng, SCHOOL_LAT, SCHOOL_LNG));
+                    const sos  = parseInt(p.etat) === 1;
+                    latLngs.push([lat, lng]);
+
+                    if (idx < posList.length - 1) {
+                        L.circleMarker([lat, lng], {
+                            radius: 5, fillColor: sos ? '#ef4444' : '#6366f1',
+                            color: '#fff', weight: 1, opacity: 0.9, fillOpacity: 0.8
+                        }).bindPopup(`<div style="color:#0f172a;"><strong>Étape ${idx+1}/${posList.length}</strong><br>Lat: ${lat}<br>Lng: ${lng}<br>Statut: ${sos ? '<span style="color:red;font-weight:bold;">SOS</span>' : '<span style="color:green;font-weight:bold;">Normal</span>'}</div>`)
+                          .addTo(historyLayerGroup);
+                    }
+
+                    const isLast = idx === posList.length - 1;
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>${idx+1}${isLast ? ' 📍 (Actuel)' : ''}</strong></td>
+                        <td><code>${lat.toFixed(6)}</code></td>
+                        <td><code>${lng.toFixed(6)}</code></td>
+                        <td>${d}m de l'école</td>
+                        <td>${sos ? '<span class="status-pill danger">🚨 ALERTE SOS</span>' : (d<=300 ? '<span class="status-pill safe">🟢 En zone</span>' : '<span class="status-pill transit">⚠️ Hors zone</span>')}</td>
+                        <td><button onclick="zoomToPosition(${lat},${lng},${idx+1})" class="btn-action" style="padding:0.2rem 0.6rem;font-size:0.78rem;">🎯 Voir</button></td>
+                    `;
+                    tbody.insertBefore(tr, tbody.firstChild);
+                });
+
+                if (pathPolyline) {
+                    pathPolyline.setLatLngs(latLngs);
+                } else {
+                    pathPolyline = L.polyline(latLngs, { color: '#6366f1', weight: 4, opacity: 0.85, dashArray: '6,6' }).addTo(map);
+                }
+
+                const ll = [lastLat, lastLng];
+                if (currentMarker) {
+                    currentMarker.setLatLng(ll);
+                } else {
+                    currentMarker = L.marker(ll).addTo(map);
+                }
+                currentMarker.bindPopup(`
+                    <div style="text-align:center;color:#0f172a;">
+                        <strong style="color:#4f46e5;">🎒 Position Actuelle</strong><br>
+                        <strong>Élève :</strong> ${data.enfant ? data.enfant.prenom + ' ' + data.enfant.nom : 'N/A'}<br>
+                        <strong>Section :</strong> ${data.enfant ? data.enfant.classe : ''}<br>
+                        <strong>Distance École :</strong> ${Math.round(dist)} m<br>
+                        <strong>Statut :</strong> ${isSOS ? '<span style="color:red;font-weight:bold;">🚨 SOS</span>' : (inside ? '<span style="color:green;font-weight:bold;">🟢 Zone Sécurisée</span>' : '<span style="color:orange;font-weight:bold;">⚠️ Hors Périmètre</span>')}
+                    </div>`).openPopup();
+
+                if (isFirstLoad) { map.setView(ll, 16); isFirstLoad = false; }
+
+            } else {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:1.5rem;">Aucun trajet enregistré. En attente des données GPS du bracelet...</td></tr>`;
+                badgeDiv.className = 'live-badge status-offline';
+                badgeDiv.innerHTML = `<span class="dot" style="background:#6b7280;animation:none;"></span> En attente du bracelet GPS...`;
+            }
+        } catch (err) {
+            console.error('Erreur chargement positions:', err);
+        }
+    }
+
+    // Démarrage
+    checkBraceletStatus();
     loadTrackingData();
-    setInterval(loadTrackingData, 4000);
+    setInterval(() => { loadTrackingData(); checkBraceletStatus(); }, 4000);
 </script>
 </body>
 </html>
-
-
