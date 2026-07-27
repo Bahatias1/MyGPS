@@ -1,5 +1,5 @@
 // API Endpoint 100% compatible avec enregistrerEnfant.php
-const { dbQuery, getDbType, memoryStore } = require('../lib/db');
+const { supabaseQuery, getDbType, memoryStore } = require('../lib/db');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Content-Type', 'application/json');
@@ -14,14 +14,37 @@ module.exports = async function handler(req, res) {
     const dbType = getDbType();
 
     if (dbType !== 'memory') {
-      const result = await dbQuery(
-        "INSERT INTO enfant (nom, postNom, prenom, age, classe, photo) VALUES (?, ?, ?, ?, ?, ?)",
-        [nom, postNom, prenom, parseInt(age), classe, photoName]
-      );
-      // Créer une position par défaut à Goma pour le nouvel enfant
-      await dbQuery(
-        "INSERT INTO position (idEnfant, latitude, longitude, etat) VALUES (1, -1.6585, 29.2203, 0)"
-      );
+      // Étape 1 : Insérer l'enfant et récupérer son ID généré
+      const inserted = await supabaseQuery('enfant', {
+        method: 'POST',
+        body: {
+          nom,
+          postnom: postNom || postNom,
+          prenom,
+          age: parseInt(age),
+          classe,
+          photo: photoName
+        },
+        returning: 'representation'
+      });
+
+      // Étape 2 : Récupérer l'ID du nouvel enfant
+      const newEnfant = Array.isArray(inserted) ? inserted[0] : inserted;
+      const newId = newEnfant ? (newEnfant.idenfant || newEnfant.idEnfant) : null;
+
+      if (newId) {
+        // Étape 3 : Créer une position par défaut à Goma avec l'ID correct
+        await supabaseQuery('position', {
+          method: 'POST',
+          body: {
+            idenfant: newId,
+            latitude: -1.6585,
+            longitude: 29.2203,
+            etat: 0
+          }
+        });
+      }
+
       return res.status(200).json({ success: true, message: "Données enregistrées avec succès!" });
     } else {
       // Mode Démo mémoire

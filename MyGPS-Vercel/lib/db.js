@@ -30,7 +30,7 @@ async function supabaseQuery(table, options = {}) {
     "apikey": SUPABASE_SERVICE_KEY,
     "Authorization": `Bearer ${SUPABASE_SERVICE_KEY}`,
     "Content-Type": "application/json",
-    "Prefer": method === 'POST' ? `return=${returning}` : ''
+    "Prefer": (method === 'POST' || method === 'PATCH') ? "return=representation" : ''
   };
 
   const fetchOptions = { method, headers };
