@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Géolocalisation - Carte de Goma, RDC</title>
+    <title>Géolocalisation Élève en Direct - ScholaGuard Maternelle</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
@@ -15,7 +15,7 @@
             box-shadow: var(--shadow-card);
         }
         .leaflet-container {
-            background: #0f172a !important;
+            background: #0b0f19 !important;
         }
         .info-card-minimal {
             background: var(--bg-card);
@@ -57,12 +57,29 @@
             100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
         }
         .status-alert {
-            background: rgba(239, 68, 68, 0.15);
+            background: rgba(239, 68, 68, 0.2);
             color: #fca5a5;
-            border-color: rgba(239, 68, 68, 0.4);
+            border-color: rgba(239, 68, 68, 0.5);
+            animation: alertFlash 1s infinite alternate;
         }
         .status-alert .dot {
             background-color: #ef4444;
+        }
+        @keyframes alertFlash {
+            from { box-shadow: 0 0 5px rgba(239, 68, 68, 0.3); }
+            to { box-shadow: 0 0 20px rgba(239, 68, 68, 0.8); }
+        }
+        .school-geofence-banner {
+            background: rgba(99, 102, 241, 0.12);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: var(--radius-md);
+            padding: 0.8rem 1.2rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: var(--text-main);
+            font-size: 0.9rem;
         }
     </style>
 </head>
@@ -70,12 +87,12 @@
 <header>
     <div class="header-container">
         <a href="afficherEnfants.html" class="logo">
-            <span>SYSLOC</span>
-            <span class="logo-badge">GPS TRACKER</span>
+            <span>🏫 ScholaGuard</span>
+            <span class="logo-badge">ÉCOLE MATERNELLE</span>
         </a>
         <nav>
-            <a href="enregistrerEnfant.html" class="btn-nav-accent">+ Ajouter Enfant</a>
-            <a href="afficherEnfants.html">Mes Enfants</a>
+            <a href="enregistrerEnfant.html" class="btn-nav-accent">+ Inscrire Élève</a>
+            <a href="afficherEnfants.html">Registre Élèves</a>
             <a href="index.html">Déconnexion</a>
         </nav>
     </div>
@@ -84,35 +101,126 @@
 <main class="main-content">
     <div class="info-card-minimal" id="childDetails">
         <div>
-            <h2 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.5rem; font-weight: 700; color: var(--text-main);">Détails de l'enfant</h2>
-            <p style="color: var(--text-muted); font-size: 0.9rem;">Chargement des données du bracelet GPS...</p>
+            <h2 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.5rem; font-weight: 800; color: var(--text-main);">Détails de l'élève</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">Chargement des données de géolocalisation du bracelet GPS...</p>
         </div>
         <div class="live-badge" id="liveBadge">
             <span class="dot"></span> Connexion au Bracelet GPS...
         </div>
     </div>
 
+    <!-- Geofencing & Safety Status Bar -->
+    <div class="school-geofence-banner" id="geofenceBanner">
+        <div>
+            <strong>📍 Enceinte Scolaire Sécurisée :</strong> École Maternelle (Rayon de surveillance 300m)
+        </div>
+        <div id="geofenceStatus">
+            <span class="status-pill safe">🟢 Dans l'enceinte de l'école</span>
+        </div>
+    </div>
+
     <div id="map"></div>
+
+    <!-- Section Historique des Déplacements -->
+    <div class="table-container" style="margin-top: 2rem;">
+        <div style="padding: 1.2rem 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+            <h3 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.2rem; font-weight: 700; margin: 0; color: var(--text-main);">
+                📜 Historique des Déplacements de l'Élève
+            </h3>
+            <span style="font-size: 0.85rem; color: var(--text-muted);" id="historyCountBadge">0 positions enregistrées</span>
+        </div>
+        <div style="overflow-x: auto;">
+            <table class="tableAff">
+                <thead>
+                    <tr>
+                        <th>Étape #</th>
+                        <th>Latitude</th>
+                        <th>Longitude</th>
+                        <th>Distance École</th>
+                        <th>Statut Bracelet</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="historyTableBody">
+                    <tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:1.5rem;">Chargement de l'historique...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </main>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
     const urlParams = new URLSearchParams(window.location.search);
-    const childId = urlParams.get('id') || 2;
+    // Si aucun id dans l'URL, childId vaut 0 => L'API chargera automatiquement le tout dernier élève inscrit !
+    const childId = urlParams.get('id') || 0;
+
+    // Coordonnées du centre de l'École Maternelle
+    const SCHOOL_LAT = -1.6585;
+    const SCHOOL_LNG = 29.2203;
 
     // Initialiser la carte Leaflet sur Goma
-    const map = L.map('map').setView([-1.6585, 29.2203], 15);
+    const map = L.map('map').setView([SCHOOL_LAT, SCHOOL_LNG], 16);
 
-    // Couche OpenStreetMap en Mode Sombre/Minimal
+    // Couche OpenStreetMap en Mode Sombre/Minimal Voyage
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
         maxZoom: 19,
         attribution: '© OpenStreetMap © CARTO'
     }).addTo(map);
 
+    // 1. Représentation visuelle de la zone sécurisée de l'École Maternelle (Geofencing 300m)
+    const schoolCircle = L.circle([SCHOOL_LAT, SCHOOL_LNG], {
+        color: '#6366f1',
+        fillColor: '#6366f1',
+        fillOpacity: 0.12,
+        weight: 2,
+        dashArray: '5, 8',
+        radius: 300
+    }).addTo(map);
+
+    schoolCircle.bindPopup(`
+        <div style="text-align:center;color:#0f172a;">
+            <strong>🏫 Enceinte École Maternelle</strong><br>
+            Zone Sécurisée (Rayon 300m)
+        </div>
+    `);
+
+    // Marqueur fixe pour le bâtiment de l'école maternelle
+    const schoolIconMarker = L.marker([SCHOOL_LAT, SCHOOL_LNG]).addTo(map);
+    schoolIconMarker.bindPopup(`
+        <div style="text-align:center;color:#0f172a;">
+            <strong style="font-size:1.1em;color:#4f46e5;">🏫 École Maternelle</strong><br>
+            Bâtiment Principal & Cour de Récréation
+        </div>
+    `);
+
     let currentMarker = null;
     let pathPolyline = null;
     let historyLayerGroup = L.layerGroup().addTo(map);
     let isFirstLoad = true;
+
+    // Calcul de distance pour le Geofencing (en mètres)
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371e3; // Rayon terre en mètres
+        const φ1 = lat1 * Math.PI/180;
+        const φ2 = lat2 * Math.PI/180;
+        const Δφ = (lat2-lat1) * Math.PI/180;
+        const Δλ = (lon2-lon1) * Math.PI/180;
+
+        const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                  Math.cos(φ1) * Math.cos(φ2) *
+                  Math.sin(Δλ/2) * Math.sin(Δλ/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c;
+    }
+
+    function zoomToPosition(lat, lng, stepIndex) {
+        map.setView([lat, lng], 18);
+        L.popup()
+            .setLatLng([lat, lng])
+            .setContent(`<div style="color:#0f172a;"><strong>Étape ${stepIndex}</strong><br>Lat: ${lat}<br>Lng: ${lng}</div>`)
+            .openOn(map);
+    }
 
     async function loadTrackingData() {
         try {
@@ -121,11 +229,14 @@
 
             const detailsDiv = document.getElementById('childDetails');
             const badgeDiv = document.getElementById('liveBadge');
+            const geofenceStatusDiv = document.getElementById('geofenceStatus');
+            const historyTableBody = document.getElementById('historyTableBody');
+            const historyCountBadge = document.getElementById('historyCountBadge');
 
             if (data.enfant) {
                 detailsDiv.children[0].innerHTML = `
-                    <h2 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.5rem;font-weight:800;color:var(--text-main);margin:0;">Enfant suivi : ${data.enfant.prenom} ${data.enfant.nom} ${data.enfant.postNom || ''}</h2>
-                    <p style="margin:5px 0 0 0;color:var(--text-muted);font-size:0.9rem;"><strong>Âge :</strong> ${data.enfant.age} ans | <strong>Classe :</strong> ${data.enfant.classe}</p>
+                    <h2 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.5rem;font-weight:800;color:var(--text-main);margin:0;">Élève suivi : ${data.enfant.prenom} ${data.enfant.nom} ${data.enfant.postNom || ''}</h2>
+                    <p style="margin:5px 0 0 0;color:var(--text-muted);font-size:0.9rem;"><strong>Matricule :</strong> MAT-#${data.enfant.idEnfant} | <strong>Section Maternelle :</strong> ${data.enfant.classe} (${data.enfant.age} ans)</p>
                 `;
             }
 
@@ -134,32 +245,49 @@
                 const validPositions = data.positions.filter(p => parseFloat(p.latitude) !== 0 && parseFloat(p.longitude) !== 0);
                 const posList = validPositions.length > 0 ? validPositions : data.positions;
 
+                historyCountBadge.textContent = `${posList.length} positions enregistrées`;
+
                 // Toute dernière position reçue du bracelet
                 const lastPos = posList[posList.length - 1];
-                const isAlert = parseInt(lastPos.etat) === 1;
+                const lastLat = parseFloat(lastPos.latitude);
+                const lastLng = parseFloat(lastPos.longitude);
 
-                // Badge d'état
-                if (isAlert) {
+                const isSosAlert = parseInt(lastPos.etat) === 1;
+                const distanceToSchool = calculateDistance(lastLat, lastLng, SCHOOL_LAT, SCHOOL_LNG);
+                const isInsideGeofence = distanceToSchool <= 300;
+
+                // Mise à jour des badges d'alerte et de geofence
+                if (isSosAlert) {
                     badgeDiv.className = "live-badge status-alert";
-                    badgeDiv.innerHTML = `<span class="dot"></span> ⚠️ ALERTE DANGER / BOUTON SOS PRESSÉ`;
+                    badgeDiv.innerHTML = `<span class="dot"></span> 🚨 ALERTE DANGER / BOUTON SOS PRESSÉ`;
+                    geofenceStatusDiv.innerHTML = `<span class="status-pill danger">🚨 ALERTE SOS ACTIVÉE !</span>`;
+                } else if (!isInsideGeofence) {
+                    badgeDiv.className = "live-badge status-alert";
+                    badgeDiv.innerHTML = `<span class="dot"></span> ⚠️ HORS PÉRIMÈTRE SCOLAIRE (${Math.round(distanceToSchool)}m)`;
+                    geofenceStatusDiv.innerHTML = `<span class="status-pill danger">⚠️ Sortie de l'enceinte école (${Math.round(distanceToSchool)}m)</span>`;
                 } else {
                     badgeDiv.className = "live-badge";
-                    badgeDiv.innerHTML = `<span class="dot"></span> En Direct (${posList.length} positions enregistrées)`;
+                    badgeDiv.innerHTML = `<span class="dot"></span> En Direct (${posList.length} positions GPS)`;
+                    geofenceStatusDiv.innerHTML = `<span class="status-pill safe">🟢 En zone sécurisée école (${Math.round(distanceToSchool)}m)</span>`;
                 }
 
-                // 1. Points de passage historiques cliquables
+                // 1. Points de passage historiques sur la carte & Tableau
                 historyLayerGroup.clearLayers();
+                historyTableBody.innerHTML = '';
+
                 const latLngs = [];
 
                 posList.forEach((p, idx) => {
                     const lat = parseFloat(p.latitude);
                     const lng = parseFloat(p.longitude);
+                    const dist = Math.round(calculateDistance(lat, lng, SCHOOL_LAT, SCHOOL_LNG));
+                    const isAlertPoint = parseInt(p.etat) === 1;
                     latLngs.push([lat, lng]);
 
                     if (idx < posList.length - 1) {
                         const circle = L.circleMarker([lat, lng], {
                             radius: 5,
-                            fillColor: p.etat === 1 ? '#ef4444' : '#e11d48',
+                            fillColor: isAlertPoint ? '#ef4444' : '#6366f1',
                             color: '#ffffff',
                             weight: 1,
                             opacity: 0.9,
@@ -169,11 +297,28 @@
                             <div style="color:#0f172a;">
                                 <strong>Étape ${idx + 1} / ${posList.length}</strong><br>
                                 Lat: ${lat}<br>Lng: ${lng}<br>
-                                Statut: ${p.etat === 1 ? '<span style="color:red;font-weight:bold;">SOS</span>' : '<span style="color:green;font-weight:bold;">Normal</span>'}
+                                Statut: ${isAlertPoint ? '<span style="color:red;font-weight:bold;">SOS</span>' : '<span style="color:green;font-weight:bold;">Normal</span>'}
                             </div>
                         `);
                         historyLayerGroup.addLayer(circle);
                     }
+
+                    // Remplissage du tableau d'historique (du plus récent au plus ancien)
+                    const tr = document.createElement('tr');
+                    const isLast = idx === posList.length - 1;
+                    tr.innerHTML = `
+                        <td><strong>${idx + 1} ${isLast ? '📍 (Actuel)' : ''}</strong></td>
+                        <td><code>${lat.toFixed(6)}</code></td>
+                        <td><code>${lng.toFixed(6)}</code></td>
+                        <td>${dist}m de l'école</td>
+                        <td>
+                            ${isAlertPoint ? '<span class="status-pill danger">🚨 ALERTE SOS</span>' : (dist <= 300 ? '<span class="status-pill safe">🟢 En zone</span>' : '<span class="status-pill transit">⚠️ Hors zone</span>')}
+                        </td>
+                        <td>
+                            <button onclick="zoomToPosition(${lat}, ${lng}, ${idx + 1})" class="btn-action" style="padding:0.2rem 0.6rem;font-size:0.8rem;">🎯 Voir sur carte</button>
+                        </td>
+                    `;
+                    historyTableBody.insertBefore(tr, historyTableBody.firstChild);
                 });
 
                 // 2. Ligne de trajectoire (Polyline)
@@ -181,15 +326,15 @@
                     pathPolyline.setLatLngs(latLngs);
                 } else {
                     pathPolyline = L.polyline(latLngs, {
-                        color: '#e11d48',
+                        color: '#6366f1',
                         weight: 4,
                         opacity: 0.85,
                         dashArray: '6, 6'
                     }).addTo(map);
                 }
 
-                // 3. Marqueur principal Position Actuelle
-                const currentLatLng = [parseFloat(lastPos.latitude), parseFloat(lastPos.longitude)];
+                // 3. Marqueur principal Position Actuelle de l'Élève
+                const currentLatLng = [lastLat, lastLng];
 
                 if (currentMarker) {
                     currentMarker.setLatLng(currentLatLng);
@@ -199,10 +344,11 @@
 
                 currentMarker.bindPopup(`
                     <div style="text-align:center;color:#0f172a;">
-                        <strong style="font-size:1.1em;color:#9f1239;">📍 Position Actuelle en Direct</strong><br>
-                        <strong>Enfant :</strong> ${data.enfant ? data.enfant.prenom + ' ' + data.enfant.nom : ''}<br>
-                        <strong>Lat :</strong> ${lastPos.latitude} | <strong>Lng :</strong> ${lastPos.longitude}<br>
-                        <strong>Statut :</strong> ${isAlert ? '<span style="color:red;font-weight:bold;">⚠️ DANGER / SOS</span>' : '<span style="color:green;font-weight:bold;">🟢 Normal</span>'}
+                        <strong style="font-size:1.1em;color:#4f46e5;">🎒 Position de l'Élève en Direct</strong><br>
+                        <strong>Élève :</strong> ${data.enfant ? data.enfant.prenom + ' ' + data.enfant.nom : ''}<br>
+                        <strong>Section :</strong> ${data.enfant ? data.enfant.classe : ''}<br>
+                        <strong>Distance École :</strong> ${Math.round(distanceToSchool)} mètres<br>
+                        <strong>Statut :</strong> ${isSosAlert ? '<span style="color:red;font-weight:bold;">🚨 ALERTE SOS PRESSÉE</span>' : (isInsideGeofence ? '<span style="color:green;font-weight:bold;">🟢 En Zone Sécurisée</span>' : '<span style="color:orange;font-weight:bold;">⚠️ Hors Périmètre</span>')}
                     </div>
                 `).openPopup();
 
@@ -210,6 +356,8 @@
                     map.setView(currentLatLng, 16);
                     isFirstLoad = false;
                 }
+            } else {
+                historyTableBody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:1.5rem;">Aucun trajet enregistré pour le moment.</td></tr>`;
             }
         } catch (err) {
             console.error("Erreur de chargement des positions:", err);
@@ -217,7 +365,9 @@
     }
 
     loadTrackingData();
-    setInterval(loadTrackingData, 5000);
+    setInterval(loadTrackingData, 4000);
 </script>
 </body>
 </html>
+
+
