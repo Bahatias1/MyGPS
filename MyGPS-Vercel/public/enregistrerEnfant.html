@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ajouter un Enfant - SYSLOC</title>
+    <title>Inscription Élève - ScholaGuard Maternelle</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <header>
     <div class="header-container">
         <a href="afficherEnfants.html" class="logo">
-            <span>SYSLOC</span>
-            <span class="logo-badge">GPS TRACKER</span>
+            <span>🏫 ScholaGuard</span>
+            <span class="logo-badge">ÉCOLE MATERNELLE</span>
         </a>
         <nav>
-            <a href="enregistrerEnfant.html" class="active btn-nav-accent">+ Ajouter Enfant</a>
-            <a href="afficherEnfants.html">Mes Enfants</a>
+            <a href="enregistrerEnfant.html" class="active btn-nav-accent">+ Inscrire Élève</a>
+            <a href="afficherEnfants.html">Registre Élèves</a>
             <a href="index.html">Déconnexion</a>
         </nav>
     </div>
@@ -25,8 +25,9 @@
     <div class="form-card-wrapper">
         <div class="card-minimal">
             <div class="form-header">
-                <h2>Enregistrer un Enfant</h2>
-                <p>Associez le bracelet GPS à votre enfant</p>
+                <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🎒</div>
+                <h2>Fiche d'Inscription Élève</h2>
+                <p>Enregistrez l'élève et associez son bracelet GPS de surveillance</p>
             </div>
 
             <div id="errorMsg" class="alert alert-error" style="display: none;"></div>
@@ -34,7 +35,7 @@
 
             <form id="childForm">
                 <div class="form-group">
-                    <label for="nom">Nom de l'enfant</label>
+                    <label for="nom">Nom de l'élève</label>
                     <input type="text" id="nom" name="nom" placeholder="Ex: Mussa" required>
                 </div>
 
@@ -44,33 +45,28 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="prenom">Prénom</label>
+                    <label for="prenom">Prénom de l'élève</label>
                     <input type="text" id="prenom" name="prenom" placeholder="Ex: Erick" required>
                 </div>
 
                 <div class="form-group">
-                    <label for="age">Âge (Ans)</label>
-                    <input type="number" id="age" name="age" min="1" max="18" placeholder="Ex: 4" required>
+                    <label for="age">Âge de l'enfant (Ans)</label>
+                    <input type="number" id="age" name="age" min="2" max="6" placeholder="Ex: 4" required>
                 </div>
 
                 <div class="form-group">
-                    <label for="classe">Classe / Niveau</label>
+                    <label for="classe">Section Maternelle</label>
                     <select id="classe" name="classe" required>
-                        <option value="première maternel">Première maternel</option>
-                        <option value="deuxième maternel">Deuxième maternel</option>
-                        <option value="troisième maternel">Troisième maternel</option>
-                        <option value="1ère Primaire">1ère Primaire</option>
-                        <option value="2ème Primaire">2ème Primaire</option>
-                        <option value="3ème Primaire">3ème Primaire</option>
-                        <option value="4ème Primaire">4ème Primaire</option>
-                        <option value="5ème Primaire">5ème Primaire</option>
-                        <option value="6ème Primaire">6ème Primaire</option>
+                        <option value="Toute Petite Section (TPS)">Toute Petite Section (TPS - 2 à 3 ans)</option>
+                        <option value="Petite Section (PS)" selected>Petite Section (PS - 3 à 4 ans)</option>
+                        <option value="Moyenne Section (MS)">Moyenne Section (MS - 4 à 5 ans)</option>
+                        <option value="Grande Section (GS)">Grande Section (GS - 5 à 6 ans)</option>
                     </select>
                 </div>
 
                 <div style="margin-top: 2rem;">
                     <button type="submit" class="btn-primary" id="btnSubmit">
-                        <span>Enregistrer l'enfant</span>
+                        <span>Inscrire l'élève & Activer le Bracelet 🛰️</span>
                     </button>
                 </div>
             </form>
@@ -95,7 +91,7 @@
         successMsg.style.display = 'none';
 
         btnSubmit.disabled = true;
-        btnSubmit.innerHTML = '<span>Enregistrement en cours...</span>';
+        btnSubmit.innerHTML = '<span>Inscription en cours...</span>';
 
         try {
             const res = await fetch('/api/enregistrerEnfant', {
@@ -108,7 +104,7 @@
 
             if (res.ok && data.success) {
                 successMsg.style.display = 'flex';
-                successMsg.textContent = 'Enfant enregistré avec succès ! Redirection...';
+                successMsg.textContent = 'Élève inscrit avec succès ! Redirection vers le registre...';
                 setTimeout(() => window.location.href = 'afficherEnfants.html', 1500);
             } else {
                 errorMsg.style.display = 'flex';
@@ -119,9 +115,10 @@
             errorMsg.textContent = 'Erreur serveur : ' + err.message;
         } finally {
             btnSubmit.disabled = false;
-            btnSubmit.innerHTML = '<span>Enregistrer l\'enfant</span>';
+            btnSubmit.innerHTML = '<span>Inscrire l\'élève & Activer le Bracelet 🛰️</span>';
         }
     });
 </script>
 </body>
 </html>
+
