@@ -1,301 +1,248 @@
 #include <TinyGPSPlus.h>
 #include <SoftwareSerial.h>
-
 #include <ESP8266WiFi.h>
-  #include <ESP8266HTTPClient.h>
-  #include <WiFiClientSecure.h>
+#include <ESP8266HTTPClient.h>
+#include <WiFiClientSecure.h>
+#include <ArduinoJson.h>
 
-   const char *ssid = "VirungAI";
-    const char *password = "123456789000";
+// === CONFIGURATION WiFi ===
+const char *ssid     = "VirungAI";
+const char *password = "123456789000";
 
-// Supabase REST API - Envoi direct sans passer par Vercel
+// === SUPABASE REST API ===
+// Le bracelet envoie directement à Supabase sans passer par Vercel
 const char* SUPABASE_HOST = "qrsukiatatwsyitcuuql.supabase.co";
-const char* SUPABASE_URL  = "https://qrsukiatatwsyitcuuql.supabase.co/rest/v1/position";
 const char* SUPABASE_KEY  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyc3VraWF0YXR3c3lpdGN1dXFsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NTEyNjE1MCwiZXhwIjoyMTAwNzAyMTUwfQ.BQe2omWFo6mcGEZ71CGvyuu7FzfP3cpvInSNgbl3z5w";
 
-     String postdata;
-
-      String latitude;
-       String  longitude;
-
-        String  etatalerte;
-
-         float niveaufumee;
-
-/*
-   This sample code demonstrates the normal use of a TinyGPSPlus (TinyGPSPlus) object.
-   It requires the use of SoftwareSerial, and assumes that you have a
-   4800-baud serial GPS device hooked up on pins 4(rx) and 3(tx).
-*/
-static const int RXPin = 4, TXPin = 3;
+// GPS Software Serial sur D2 (RX) et D3 (TX)
+static const int RXPin = D2, TXPin = D3;
 static const uint32_t GPSBaud = 9600;
 
-// The TinyGPSPlus object
 TinyGPSPlus gps;
-
-// The serial connection to the GPS device
 SoftwareSerial ss(D2, D3);
 
- int nombreappuie;
+// === VARIABLES GLOBALES ===
+String latitude;
+String longitude;
+String etatalerte;
+int nombreappuie = 0;
+int idEnfantActif = -1;  // -1 = non encore récupéré depuis Supabase
 
-void setup(){
-
-  pinMode(D5 , INPUT);
-   pinMode(D0 , OUTPUT);
-    pinMode(D1 , OUTPUT);
+// === SETUP ===
+void setup() {
+  pinMode(D5, INPUT);   // Bouton SOS
+  pinMode(D0, OUTPUT);  // LED Rouge (Alerte)
+  pinMode(D1, OUTPUT);  // LED Verte (Succès envoi)
 
   Serial.begin(9600);
-  ss.begin(9600);
+  ss.begin(GPSBaud);
 
-  Serial.println(F("FullExample.ino"));
-  Serial.println(F("An extensive example of many interesting TinyGPSPlus features"));
-  Serial.print(F("Testing TinyGPSPlus library v. ")); Serial.println(TinyGPSPlus::libraryVersion());
-  Serial.println(F("by Mikal Hart"));
-  Serial.println();
-  Serial.println(F("Sats HDOP  Latitude   Longitude   Fix  Date       Time     Date Alt    Course Speed Card  Distance Course Card  Chars Sentences Checksum"));
-  Serial.println(F("           (deg)      (deg)       Age                      Age  (m)    --- from GPS ----  ---- to London  ----  RX    RX        Fail"));
-  Serial.println(F("----------------------------------------------------------------------------------------------------------------------------------------"));
+  Serial.println(F("=== CS MAMA MULZEI - Bracelet GPS ESP8266 ==="));
+  Serial.println(F("Initialisation..."));
 
-  if(!WiFi.isConnected()){
+  connectToWiFi();
+
+  // Récupérer dynamiquement le dernier élève inscrit depuis Supabase
+  idEnfantActif = getDernierEnfantId();
+
+  if (idEnfantActif > 0) {
+    Serial.print(F("Bracelet assigné à l'élève ID : "));
+    Serial.println(idEnfantActif);
+  } else {
+    Serial.println(F("AVERTISSEMENT: Aucun élève trouvé - utilisation ID=1 par défaut"));
+    idEnfantActif = 1;
+  }
+}
+
+// === LOOP PRINCIPAL ===
+void loop() {
+  // Alimentation du GPS
+  smartDelay(1000);
+
+  // Lecture de la position GPS
+  latitude  = String(gps.location.lat(), 6);
+  longitude = String(gps.location.lng(), 6);
+
+  Serial.print(F("GPS -> Lat: "));
+  Serial.print(latitude);
+  Serial.print(F(" | Lng: "));
+  Serial.println(longitude);
+
+  // Gestion du bouton SOS (D5)
+  if (digitalRead(D5) == LOW) {
+    delay(400);
+    nombreappuie++;
+  }
+
+  if (nombreappuie == 0) {
+    etatalerte = "0";
+    digitalWrite(D0, LOW);
+  } else if (nombreappuie == 1) {
+    etatalerte = "1";
+    digitalWrite(D0, HIGH);
+    Serial.println(F("!!! BOUTON SOS PRESSÉ !!!"));
+  } else if (nombreappuie >= 2) {
+    nombreappuie = 0;
+    digitalWrite(D0, LOW);
+    Serial.println(F("SOS désactivé."));
+  }
+
+  // Vérification connexion WiFi
+  if (!WiFi.isConnected()) {
+    Serial.println(F("WiFi perdu - reconnexion..."));
     connectToWiFi();
   }
 
-  Serial.print(WiFi.localIP());
+  // Si pas encore d'ID élève valide, réessayer
+  if (idEnfantActif <= 0) {
+    idEnfantActif = getDernierEnfantId();
+    if (idEnfantActif <= 0) idEnfantActif = 1;
+  }
+
+  // Envoi de la position vers Supabase
+  envoyerPosition();
+
+  if (millis() > 5000 && gps.charsProcessed() < 10) {
+    Serial.println(F("AVERTISSEMENT: Aucune donnée GPS - vérifiez le câblage du module GPS"));
+  }
 }
 
-void loop()
-{
-  static const double LONDON_LAT = 51.508131, LONDON_LON = -0.128002;
+// === RÉCUPÉRATION DYNAMIQUE DU DERNIER ÉLÈVE INSCRIT ===
+int getDernierEnfantId() {
+  WiFiClientSecure client;
+  HTTPClient http;
+  client.setInsecure();
+  client.setBufferSizes(1024, 1024);
 
-  printInt(gps.satellites.value(), gps.satellites.isValid(), 5);
-  printFloat(gps.hdop.hdop(), gps.hdop.isValid(), 6, 1);
-  printFloat(gps.location.lat(), gps.location.isValid(), 11, 6);
-  printFloat(gps.location.lng(), gps.location.isValid(), 12, 6);
-  printInt(gps.location.age(), gps.location.isValid(), 5);
-  printDateTime(gps.date, gps.time);
-  printFloat(gps.altitude.meters(), gps.altitude.isValid(), 7, 2);
-  printFloat(gps.course.deg(), gps.course.isValid(), 7, 2);
-  printFloat(gps.speed.kmph(), gps.speed.isValid(), 6, 2);
-  printStr(gps.course.isValid() ? TinyGPSPlus::cardinal(gps.course.deg()) : "*** ", 6);
+  // Requête Supabase : SELECT * FROM enfant ORDER BY idenfant DESC LIMIT 1
+  String url = "/rest/v1/enfant?select=idenfant&order=idenfant.desc&limit=1";
 
-  unsigned long distanceKmToLondon =
-    (unsigned long)TinyGPSPlus::distanceBetween(
-      gps.location.lat(),
-      gps.location.lng(),
-      LONDON_LAT,
-      LONDON_LON) / 1000;
-  printInt(distanceKmToLondon, gps.location.isValid(), 9);
+  http.setTimeout(10000);
+  http.begin(client, SUPABASE_HOST, 443, url);
+  http.addHeader("apikey",         SUPABASE_KEY);
+  http.addHeader("Authorization",  String("Bearer ") + SUPABASE_KEY);
+  http.addHeader("Content-Type",   "application/json");
 
-  double courseToLondon =
-    TinyGPSPlus::courseTo(
-      gps.location.lat(),
-      gps.location.lng(),
-      LONDON_LAT,
-      LONDON_LON);
+  int httpCode = http.GET();
+  Serial.print(F("Récupération dernier élève - HTTP: "));
+  Serial.println(httpCode);
 
-  printFloat(courseToLondon, gps.location.isValid(), 7, 2);
+  if (httpCode == 200) {
+    String payload = http.getString();
+    Serial.print(F("Réponse Supabase: "));
+    Serial.println(payload);
+    http.end();
 
-  const char *cardinalToLondon = TinyGPSPlus::cardinal(courseToLondon);
-
-  printStr(gps.location.isValid() ? cardinalToLondon : "*** ", 6);
-
-  printInt(gps.charsProcessed(), true, 6);
-  printInt(gps.sentencesWithFix(), true, 10);
-  printInt(gps.failedChecksum(), true, 9);
-  Serial.println();
-
-  smartDelay(1000);
-
-  if (millis() > 5000 && gps.charsProcessed() < 10)
-    Serial.println(F("No GPS data received: check wiring"));
-
-   String idenfant  = "2";
-
-   longitude = String(gps.location.lng(),6);
-   latitude = String(gps.location.lat(),6);
-
-    Serial.println("");
-     Serial.println("");
-      Serial.println("");
-   Serial.println(longitude);
-     Serial.println(latitude);
-
-      Serial.println("");
-     Serial.println("");
-      Serial.println("");
-
-    if(digitalRead(D5) == LOW) {
-       delay(400);
-    nombreappuie = nombreappuie + 1;
+    // Parsage JSON simple : [{"idenfant":3}]
+    // On cherche le premier nombre après "idenfant":
+    int colonIdx = payload.indexOf("\"idenfant\":");
+    if (colonIdx != -1) {
+      int start = colonIdx + 11; // sauter "idenfant":
+      int end   = start;
+      while (end < payload.length() && (isDigit(payload[end]) || payload[end] == '-')) end++;
+      String idStr = payload.substring(start, end);
+      idStr.trim();
+      int id = idStr.toInt();
+      if (id > 0) {
+        Serial.print(F("Dernier élève inscrit ID: "));
+        Serial.println(id);
+        return id;
+      }
     }
-
-     if( nombreappuie == 0) {
-       etatalerte = "0";
-       digitalWrite(D0 , LOW);
-     }
-
-     if( nombreappuie == 1) {
-       etatalerte = "1";
-        digitalWrite(D0 , HIGH);
-     }
-
-     if(nombreappuie == 2) {
-       nombreappuie = 0;
-       digitalWrite(D0 , LOW);
-     }
-
-    HTTPClient http;
-     WiFiClientSecure client;
-     client.setBufferSizes(1024, 1024);
-     client.setInsecure(); // Bypass certificat SSL - ESP8266 BearSSL
-
-     // Construction du payload JSON pour Supabase REST API
-     String jsonPayload = "{\"idenfant\":" + idenfant +
-                          ",\"latitude\":" + latitude +
-                          ",\"longitude\":" + longitude +
-                          ",\"etat\":" + etatalerte + "}";
-
-     Serial.println("Envoi vers Supabase: " + jsonPayload);
-
-     // Format host+port+path recommande pour HTTPS sur ESP8266
-     http.setTimeout(15000);
-     http.begin(client, SUPABASE_HOST, 443, "/rest/v1/position");
-     http.addHeader("Content-Type", "application/json");
-     http.addHeader("apikey", SUPABASE_KEY);
-     http.addHeader("Authorization", String("Bearer ") + SUPABASE_KEY);
-     http.addHeader("Prefer", "resolution=merge-duplicates");
-     int httpcode = http.POST(jsonPayload);
-     Serial.println("HTTP code: " + String(httpcode));
-
-     // Supabase retourne 201 (Created), 200 (OK) ou 409 (Conflict/Merge)
-     if(httpcode == 201 || httpcode == 200 || httpcode == 409) {
-
-        digitalWrite(D1 , HIGH);
-        delay (5000);
-
-       String webpage = http.getString();
-       Serial.println(webpage + "\n");
-
-        digitalWrite(D1 , LOW);
-        delay (5000);
-
-     } else{
-
-        digitalWrite(D0 , HIGH);
-        digitalWrite(D1 , LOW);
-
-           digitalWrite(D0 , LOW);
-        digitalWrite(D1 , LOW);
-
-        Serial.println(httpcode);
-        Serial.println("failed to upload values. \n");
-        http.end();
-        return;
-     }
+  }
+  http.end();
+  return -1;
 }
 
-// This custom version of delay() ensures that the gps object is being "fed".
-static void smartDelay(unsigned long ms)
-{
+// === ENVOI POSITION GPS VERS SUPABASE ===
+void envoyerPosition() {
+  WiFiClientSecure client;
+  HTTPClient http;
+  client.setInsecure();
+  client.setBufferSizes(1024, 1024);
+
+  // Payload JSON pour Supabase REST API
+  String jsonPayload = "{\"idenfant\":" + String(idEnfantActif) +
+                       ",\"latitude\":"  + latitude +
+                       ",\"longitude\":" + longitude +
+                       ",\"etat\":"      + etatalerte + "}";
+
+  Serial.print(F("Envoi Supabase: "));
+  Serial.println(jsonPayload);
+
+  http.setTimeout(15000);
+  http.begin(client, SUPABASE_HOST, 443, "/rest/v1/position");
+  http.addHeader("Content-Type",  "application/json");
+  http.addHeader("apikey",        SUPABASE_KEY);
+  http.addHeader("Authorization", String("Bearer ") + SUPABASE_KEY);
+  http.addHeader("Prefer",        "resolution=merge-duplicates");
+
+  int httpCode = http.POST(jsonPayload);
+  Serial.print(F("HTTP Code: "));
+  Serial.println(httpCode);
+
+  // 201 Created, 200 OK, 409 Conflict/Merge = Succès
+  if (httpCode == 201 || httpCode == 200 || httpCode == 409) {
+    Serial.println(F("✓ Position envoyée avec succès !"));
+    digitalWrite(D1, HIGH);
+    delay(300);
+    digitalWrite(D1, LOW);
+  } else {
+    Serial.print(F("✗ Échec envoi. Code HTTP: "));
+    Serial.println(httpCode);
+    // Clignotement LED rouge pour erreur
+    for (int i = 0; i < 3; i++) {
+      digitalWrite(D0, HIGH); delay(150);
+      digitalWrite(D0, LOW);  delay(150);
+    }
+  }
+  http.end();
+}
+
+// === SMART DELAY - Alimente le GPS pendant l'attente ===
+static void smartDelay(unsigned long ms) {
   unsigned long start = millis();
-  do
-  {
+  do {
     while (ss.available())
       gps.encode(ss.read());
   } while (millis() - start < ms);
 }
 
-static void printFloat(float val, bool valid, int len, int prec)
-{
-  if (!valid)
-  {
-    while (len-- > 1)
-      Serial.print('*');
-    Serial.print(' ');
-  }
-  else
-  {
-    Serial.print(val, prec);
-    int vi = abs((int)val);
-    int flen = prec + (val < 0.0 ? 2 : 1); // . and -
-    flen += vi >= 1000 ? 4 : vi >= 100 ? 3 : vi >= 10 ? 2 : 1;
-    for (int i=flen; i<len; ++i)
-      Serial.print(' ');
-  }
-  smartDelay(0);
-}
+// === CONNEXION WIFI ===
+void connectToWiFi() {
+  WiFi.mode(WIFI_OFF);
+  delay(500);
+  WiFi.mode(WIFI_STA);
+  Serial.print(F("Connexion WiFi au réseau : "));
+  Serial.println(ssid);
+  WiFi.begin(ssid, password);
 
-static void printInt(unsigned long val, bool valid, int len)
-{
-  char sz[32] = "*****************";
-  if (valid)
-    sprintf(sz, "%ld", val);
-  sz[len] = 0;
-  for (int i=strlen(sz); i<len; ++i)
-    sz[i] = ' ';
-  if (len > 0)
-    sz[len-1] = ' ';
-  Serial.print(sz);
-  smartDelay(0);
-}
-
-static void printDateTime(TinyGPSDate &d, TinyGPSTime &t)
-{
-  if (!d.isValid())
-  {
-    Serial.print(F("********** "));
-  }
-  else
-  {
-    char sz[32];
-    sprintf(sz, "%02d/%02d/%02d ", d.month(), d.day(), d.year());
-    Serial.print(sz);
+  int attempts = 0;
+  while (WiFi.status() != WL_CONNECTED && attempts < 30) {
+    digitalWrite(D0, HIGH); digitalWrite(D1, HIGH);
+    delay(300);
+    digitalWrite(D0, LOW);  digitalWrite(D1, LOW);
+    delay(300);
+    Serial.print(".");
+    attempts++;
   }
 
-  if (!t.isValid())
-  {
-    Serial.print(F("******** "));
-  }
-  else
-  {
-    char sz[32];
-    sprintf(sz, "%02d:%02d:%02d ", t.hour(), t.minute(), t.second());
-    Serial.print(sz);
-  }
-
-  printInt(d.age(), d.isValid(), 5);
-  smartDelay(0);
-}
-
-static void printStr(const char *str, int len)
-{
-  int slen = strlen(str);
-  for (int i=0; i<len; ++i)
-    Serial.print(i<slen ? str[i] : ' ');
-  smartDelay(0);
-}
-
-void connectToWiFi(){
-    WiFi.mode(WIFI_OFF);
-    delay(1000);
-    WiFi.mode(WIFI_STA);
-    Serial.print("Connecting to ");
-    Serial.println(ssid);
-    WiFi.begin(ssid, password);
-
-    while (WiFi.status() != WL_CONNECTED) {
-
-       digitalWrite(D0 , HIGH);
-        digitalWrite(D1 ,HIGH);
-      delay(400);
-        digitalWrite(D0 , LOW);
-        digitalWrite(D1 ,LOW);
-      delay(400);
-      Serial.print(".");
-    }
-    Serial.println("");
-    Serial.println("Connected");
-
-    Serial.print("IP address: ");
+  if (WiFi.isConnected()) {
+    Serial.println();
+    Serial.println(F("✓ WiFi Connecté !"));
+    Serial.print(F("Adresse IP : "));
     Serial.println(WiFi.localIP());
+    // Signal WiFi connecté = clignoter LED verte 3x
+    for (int i = 0; i < 3; i++) {
+      digitalWrite(D1, HIGH); delay(200);
+      digitalWrite(D1, LOW);  delay(200);
+    }
+  } else {
+    Serial.println();
+    Serial.println(F("✗ Échec connexion WiFi après 30 tentatives"));
+    // Signal erreur = LED rouge fixe 2s
+    digitalWrite(D0, HIGH);
+    delay(2000);
+    digitalWrite(D0, LOW);
+  }
 }
