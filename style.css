@@ -1,0 +1,133 @@
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    /* line-height: 1.6; */
+    background-color: rgb(235, 235, 200);
+   
+}
+
+header{
+    display: flex;
+    height: 10%;
+    background-color: rgb(109, 11, 44);
+    border-radius: 10px;
+    width: 100%;
+}
+header h2 strong{
+    margin-left: 35%;
+    color: white;
+    margin-top: 5%;
+}
+header a{
+    margin-left: 18%;
+    text-decoration: none;
+    color: rgb(214, 199, 199);
+    margin-top: 3%;
+    margin-bottom: 3%;
+}
+
+a{
+    text-decoration: none;
+    text-align: center;
+   
+}
+
+header a:hover{
+    color: white;
+}
+/* form table tr td input{
+   
+} */
+ input {
+    height: 25px; 
+    border-radius: 10px;
+    border: 1px solid;
+ } 
+ 
+select{
+    height: 25px;
+    border-radius: 10px;
+    border: 1px solid;
+    width: 55%;
+}
+
+
+ 
+ .formEng{
+    border: 1px solid;
+    margin-left: 20%;
+    margin-right: 20%;
+    margin-top: 10%;
+    padding-bottom: 3%;
+    border-radius: 50px;
+    box-shadow: 10px 10px 10px black;
+    background-color: white;
+ }
+ .enreg input{
+    height: 40px;
+    width: 80px;
+    border-radius: 15px;
+    box-shadow: 5px 5px 5px black;
+    border: 0cap;
+    background-color: rgb(109, 11, 44);
+    color: white;
+ }
+ .enreg input:hover{
+    background-color: rgb(151, 26, 26)
+    
+ }
+.suivi{
+    color: black;
+}
+.tableAff{
+    width: 80%;
+    border-spacing: 200px;
+    margin-top: 2%;
+}
+
+.tableAff th, .tableAff td {
+padding: 5px;
+border:1px solid;
+text-align:center;
+height: 40px;
+line-height: 1.5;
+padding: 10px;
+
+}
+.operation {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0 auto;
+    width: 60%;
+}
+
+.operation td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0 auto;
+    width: 80%;
+}
+
+.operation form {
+    margin: 0 5px; /* Ajoute une marge égale autour des formulaires */
+}
+
+.operation form button,
+.operation form input[type="submit"] {
+    background-color: rgb(109, 11, 44);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 5px 10px; /* Taille cohérente pour tous les boutons */
+    cursor: pointer;
+    text-align: center;
+}
+
+.operation form button:hover,
+.operation form input[type="submit"]:hover {
+    background-color: rgb(151, 26, 26);
+}

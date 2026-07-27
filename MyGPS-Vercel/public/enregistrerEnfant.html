@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ajouter un enfant - SYSLOC</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+    <h2><strong>SYSLOC</strong></h2>
+    <a href="enregistrerEnfant.html">Ajouter</a>
+    <a href="afficherEnfants.html">Afficher</a>
+    <a href="index.html">Déconnexion</a>
+</header>
+
+<div class="formEng">
+    <h2 style="text-align: center;">Les informations de l'enfant</h2>
+    <form id="childForm">
+        <table style="margin: auto;">
+            <tr>
+                <td><label for="nom"><strong>Nom</strong></label></td>
+                <td><input type="text" id="nom" required></td>
+            </tr>
+            <tr>
+                <td><label for="postNom"><strong>Post-Nom</strong></label></td>
+                <td><input type="text" id="postNom" required></td>
+            </tr>
+            <tr>
+                <td><label for="prenom"><strong>Prénom</strong></label></td>
+                <td><input type="text" id="prenom" required></td>
+            </tr>
+            <tr>
+                <td><label for="age"><strong>Âge</strong></label></td>
+                <td><input type="number" id="age" required></td>
+            </tr>
+            <tr>
+                <td><label for="classe"><strong>Classe</strong></label></td>
+                <td>
+                    <select id="classe">
+                        <option value="première maternel">Première maternel</option>
+                        <option value="deuxième maternel">Deuxième maternel</option>
+                        <option value="troisième maternel">Troisième maternel</option>
+                    </select>
+                </td>
+            </tr>
+        </table>
+        <div class="enreg" style="margin-left: 40%; margin-top: 15px;">
+            <input type="submit" value="Enregistrer">
+        </div>
+    </form>
+    <div id="message" style="text-align:center; margin-top:10px;"></div>
+</div>
+
+<script>
+    document.getElementById('childForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const nom = document.getElementById('nom').value;
+        const postNom = document.getElementById('postNom').value;
+        const prenom = document.getElementById('prenom').value;
+        const age = document.getElementById('age').value;
+        const classe = document.getElementById('classe').value;
+        const msgDiv = document.getElementById('message');
+
+        try {
+            const response = await fetch('/api/enregistrerEnfant', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nom, postNom, prenom, age, classe, photo: "default.jpg" })
+            });
+            const data = await response.json();
+            if (response.ok && data.success) {
+                msgDiv.innerHTML = "<p style='color:green;'>Données enregistrées avec succès !</p>";
+                setTimeout(() => window.location.href = "afficherEnfants.html", 1000);
+            } else {
+                msgDiv.innerHTML = `<p style='color:red;'>${data.message || 'Erreur lors de l\'enregistrement'}</p>`;
+            }
+        } catch (err) {
+            msgDiv.innerHTML = `<p style='color:red;'>Erreur serveur : ${err.message}</p>`;
+        }
+    });
+</script>
+</body>
+</html>

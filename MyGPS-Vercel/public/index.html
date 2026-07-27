@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentification - SYSLOC</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="formEng">
+        <h2 style="text-align: center; padding: 2%;">Authentification</h2>
+        <form id="loginForm">
+            <table style="padding: 3%; margin-left: 25%;">
+                <tr>
+                    <td><label for="email"><strong>Email</strong></label></td>
+                    <td><input type="email" id="email" name="email" required></td>
+                </tr>
+                <tr>
+                    <td><label for="motDePasse"><strong>Mot de passe</strong></label></td>
+                    <td><input type="password" id="motDePasse" name="motDePasse" required></td>
+                </tr>
+            </table>
+            <div class="enreg" style="margin-left: 42%;">
+                <input type="submit" value="Se connecter">
+            </div>
+        </form>
+        <div id="message" style="text-align:center; margin-top:10px;"></div>
+        <p style="color: black; text-align:center;"><a href="utilisateur.html">Vous n'avez pas encore de compte ? Inscrivez-vous</a></p>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const motDePasse = document.getElementById('motDePasse').value;
+            const msgDiv = document.getElementById('message');
+
+            try {
+                const response = await fetch('/api/autentification', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, motDePasse })
+                });
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    msgDiv.innerHTML = "<p style='color:green;'>Mot de passe correct ! Redirection...</p>";
+                    setTimeout(() => window.location.href = "afficherEnfants.html", 1000);
+                } else {
+                    msgDiv.innerHTML = `<p style='color:red;'>${data.message || 'Erreur d\'authentification'}</p>`;
+                }
+            } catch (err) {
+                msgDiv.innerHTML = `<p style='color:red;'>Erreur serveur : ${err.message}</p>`;
+            }
+        });
+    </script>
+</body>
+</html>

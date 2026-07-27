@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Géolocalisation - Carte de Goma, RDC</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        #map {
+            height: 500px;
+            width: 90%;
+            margin: 20px auto;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .info-card {
+            background: white;
+            padding: 15px;
+            margin: 20px auto;
+            width: 85%;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+<header>
+    <h2><strong>SYSLOC</strong></h2>
+    <a href="enregistrerEnfant.html">Ajouter</a>
+    <a href="afficherEnfants.html">Afficher</a>
+    <a href="index.html">Déconnexion</a>
+</header>
+
+<div class="info-card" id="childDetails">
+    <h2>Détails de l'enfant</h2>
+    <p>Chargement des détails...</p>
+</div>
+
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+    // URL Parameter id
+    const urlParams = new URLSearchParams(window.location.search);
+    const childId = urlParams.get('id') || 1;
+
+    // Initialiser la carte centrée sur Goma, RDC
+    const map = L.map('map').setView([-1.6585, 29.2203], 13); // Coordonnées de Goma
+
+    // Couche OpenStreetMap
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    async function loadTrackingData() {
+        try {
+            const res = await fetch(`/api/localiser?id=${childId}`);
+            const data = await res.json();
+
+            const detailsDiv = document.getElementById('childDetails');
+            if (data.enfant) {
+                detailsDiv.innerHTML = `
+                    <h2>Enfant suivi : ${data.enfant.prenom} ${data.enfant.nom} ${data.enfant.postNom || ''}</h2>
+                    <p><strong>Âge :</strong> ${data.enfant.age} ans | <strong>Classe :</strong> ${data.enfant.classe}</p>
+                `;
+            } else {
+                detailsDiv.innerHTML = `<p style="color:red;">Aucun enfant trouvé avec cet ID.</p>`;
+            }
+
+            if (data.positions && data.positions.length > 0) {
+                data.positions.forEach(pos => {
+                    const isAlert = pos.etat === 1;
+                    const markerColor = isAlert ? 'red' : 'blue';
+                    
+                    const marker = L.marker([pos.latitude, pos.longitude]).addTo(map);
+                    marker.bindPopup(`
+                        <strong>Latitude :</strong> ${pos.latitude}<br>
+                        <strong>Longitude :</strong> ${pos.longitude}<br>
+                        <strong>Statut :</strong> ${isAlert ? '<span style="color:red;font-weight:bold;">ALERTE SOS / DANGER</span>' : '<span style="color:green;">Normal</span>'}
+                    `);
+                    if (isAlert) marker.openPopup();
+                });
+
+                // Centrer sur la dernière position connue
+                const lastPos = data.positions[data.positions.length - 1];
+                map.setView([lastPos.latitude, lastPos.longitude], 14);
+            }
+        } catch (err) {
+            console.error("Erreur de chargement des positions:", err);
+        }
+    }
+
+    loadTrackingData();
+</script>
+</body>
+</html>

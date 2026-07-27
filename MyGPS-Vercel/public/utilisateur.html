@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscription - SYSLOC</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="formEng">
+        <h2 style="text-align: center; padding: 2%;">Complétez vos paramètres</h2>
+        <form id="signupForm">
+            <table style="padding: 3%; margin-left: 20%;">
+                <tr>
+                    <td><label for="prenom"><strong>Prénom</strong></label></td>
+                    <td><input type="text" id="prenom" required></td>
+                </tr>
+                <tr>
+                    <td><label for="nom"><strong>Nom</strong></label></td>
+                    <td><input type="text" id="nom" required></td>
+                </tr>
+                <tr>
+                    <td><label for="email"><strong>Email</strong></label></td>
+                    <td><input type="email" id="email" required></td>
+                </tr>
+                <tr>
+                    <td><label for="motDePasse"><strong>Mot de passe</strong></label></td>
+                    <td><input type="password" id="motDePasse" required></td>
+                </tr>
+                <tr>
+                    <td><label for="motDePasseConfirme"><strong>Confirmez mot de passe</strong></label></td>
+                    <td><input type="password" id="motDePasseConfirme" required></td>
+                </tr>
+            </table>
+            <div class="enreg" style="margin-left: 40%;">
+                <input type="submit" value="Enregistrer">
+            </div>
+        </form>
+        <div id="message" style="text-align:center; margin-top:10px;"></div>
+        <p style="color: black; text-align:center;">Avez-vous déjà un compte ? <a href="index.html">Connectez-vous</a></p>
+    </div>
+
+    <script>
+        document.getElementById('signupForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const prenom = document.getElementById('prenom').value;
+            const nom = document.getElementById('nom').value;
+            const email = document.getElementById('email').value;
+            const motDePasse = document.getElementById('motDePasse').value;
+            const motDePasseConfirme = document.getElementById('motDePasseConfirme').value;
+            const msgDiv = document.getElementById('message');
+
+            try {
+                const response = await fetch('/api/utilisateur', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prenom, nom, email, motDePasse, motDePasseConfirme })
+                });
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    msgDiv.innerHTML = "<p style='color:green;'>Données enregistrées avec succès ! Redirection...</p>";
+                    setTimeout(() => window.location.href = "index.html", 1000);
+                } else {
+                    msgDiv.innerHTML = `<p style='color:red;'>${data.message || 'Erreur d\'inscription'}</p>`;
+                }
+            } catch (err) {
+                msgDiv.innerHTML = `<p style='color:red;'>Erreur serveur : ${err.message}</p>`;
+            }
+        });
+    </script>
+</body>
+</html>
