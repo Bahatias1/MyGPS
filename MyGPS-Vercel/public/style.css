@@ -216,12 +216,12 @@ input:focus, select:focus {
     width: 100%;
     background: linear-gradient(135deg, var(--primary), var(--primary-dark));
     color: white;
-    border: none;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: var(--radius-md);
-    padding: 0.9rem 1.5rem;
+    padding: 0.85rem 1.4rem;
     font-family: 'Plus Jakarta Sans', sans-serif;
-    font-weight: 600;
-    font-size: 1rem;
+    font-weight: 700;
+    font-size: 0.95rem;
     cursor: pointer;
     transition: var(--transition);
     box-shadow: 0 4px 15px var(--primary-glow);
@@ -234,8 +234,26 @@ input:focus, select:focus {
 
 .btn-primary:hover, .enreg input:hover, button[type="submit"]:hover {
     background: linear-gradient(135deg, var(--primary-hover), var(--primary));
-    transform: translateY(-1px);
-    box-shadow: 0 6px 20px rgba(225, 29, 72, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 22px rgba(99, 102, 241, 0.45);
+}
+
+.btn-primary:active, button[type="submit"]:active {
+    transform: translateY(0) scale(0.98);
+}
+
+.btn-nav-accent {
+    background: rgba(99, 102, 241, 0.15) !important;
+    color: #a5b4fc !important;
+    border: 1px solid rgba(99, 102, 241, 0.35) !important;
+    font-weight: 600 !important;
+    border-radius: 20px !important;
+}
+
+.btn-nav-accent:hover {
+    background: var(--primary) !important;
+    color: white !important;
+    box-shadow: 0 0 15px var(--primary-glow);
 }
 
 /* Tables & Lists */
@@ -279,29 +297,36 @@ input:focus, select:focus {
 }
 
 .tableAff tr:hover td {
-    background: rgba(255, 255, 255, 0.02);
+    background: rgba(255, 255, 255, 0.03);
 }
 
 .btn-action, .operation a {
-    background: rgba(225, 29, 72, 0.15);
-    color: #fda4af;
-    border: 1px solid rgba(225, 29, 72, 0.3);
-    padding: 0.4rem 0.9rem;
-    border-radius: var(--radius-sm);
+    background: rgba(99, 102, 241, 0.12);
+    color: #a5b4fc;
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    padding: 0.45rem 0.95rem;
+    border-radius: 10px;
     text-decoration: none;
     font-size: 0.85rem;
-    font-weight: 500;
+    font-weight: 600;
     transition: var(--transition);
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    cursor: pointer;
 }
 
 .btn-action:hover, .operation a:hover {
     background: var(--primary);
     color: white;
+    border-color: var(--primary);
+    box-shadow: 0 4px 14px var(--primary-glow);
+    transform: translateY(-1px);
 }
 
 .btn-action.btn-danger {
-    background: rgba(239, 68, 68, 0.15);
+    background: rgba(239, 68, 68, 0.12);
     color: #fca5a5;
     border-color: rgba(239, 68, 68, 0.3);
 }
@@ -309,12 +334,14 @@ input:focus, select:focus {
 .btn-action.btn-danger:hover {
     background: var(--danger);
     color: white;
+    border-color: var(--danger);
+    box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
 }
 
 /* Responsive Grid Cards for Mobile View */
 .cards-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
     gap: 1.5rem;
     margin-top: 1.5rem;
 }
@@ -323,18 +350,20 @@ input:focus, select:focus {
     background: var(--bg-card);
     backdrop-filter: blur(16px);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     padding: 1.5rem;
     box-shadow: var(--shadow-card);
     transition: var(--transition);
     display: flex;
     flex-direction: column;
-    gap: 0.8rem;
+    gap: 1rem;
 }
 
 .child-card:hover {
-    transform: translateY(-3px);
-    border-color: rgba(255, 255, 255, 0.15);
+    transform: translateY(-4px);
+    background: var(--bg-card-hover);
+    border-color: rgba(99, 102, 241, 0.35);
+    box-shadow: 0 14px 35px -10px rgba(0, 0, 0, 0.6), 0 0 20px rgba(99, 102, 241, 0.15);
 }
 
 /* Alerts & Status Badges */
