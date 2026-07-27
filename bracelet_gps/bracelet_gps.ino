@@ -154,7 +154,7 @@ void loop()
   Serial.println();
     Serial.println();
       Serial.println(postdata);
-   http.begin(client , "http://172.20.10.4:8080/dbwrite.php");
+   http.begin(client , "http://my-gps-dun.vercel.app/dbwrite.php");
    http.addHeader("Content-Type" , "application/x-www-form-urlencoded" );
     int httpcode = http.POST(postdata);
 
