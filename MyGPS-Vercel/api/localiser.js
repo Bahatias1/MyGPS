@@ -2,16 +2,24 @@
 const { dbQuery, getDbType, memoryStore } = require('../lib/db');
 
 module.exports = async function handler(req, res) {
-  const id = parseInt(req.query.id || req.query.idEnfant || 0);
+  let id = parseInt(req.query.id || req.query.idEnfant || 0);
   const dbType = getDbType();
 
   if (dbType !== 'memory') {
     try {
-      const enfants = await dbQuery("SELECT * FROM enfant WHERE idEnfant = ?", [id]);
-      const positions = await dbQuery("SELECT * FROM position WHERE idEnfant = ? ORDER BY id ASC", [id]);
+      let enfant = null;
+      if (id > 0) {
+        const enfants = await dbQuery("SELECT * FROM enfant WHERE idEnfant = ?", [id]);
+        enfant = enfants && enfants.length > 0 ? enfants[0] : null;
+      } else {
+        // Sélection automatique du dernier élève inscrit si aucun ID n'est transmis
+        const derniersEnfants = await dbQuery("SELECT * FROM enfant ORDER BY idEnfant DESC LIMIT 1");
+        enfant = derniersEnfants && derniersEnfants.length > 0 ? derniersEnfants[0] : null;
+      }
 
-      const enfant = enfants && enfants.length > 0 ? enfants[0] : null;
-      // Normalize column names to lowercase/camelCase for JS frontend
+      const targetId = enfant ? (enfant.idenfant || enfant.idEnfant) : id;
+      const positions = targetId ? await dbQuery("SELECT * FROM position WHERE idEnfant = ? ORDER BY id ASC", [targetId]) : [];
+
       const normalizedEnfant = enfant ? {
         idEnfant: enfant.idenfant || enfant.idEnfant,
         nom: enfant.nom,
@@ -39,9 +47,16 @@ module.exports = async function handler(req, res) {
       return res.status(500).json({ error: "Erreur de connexion : " + err.message });
     }
   } else {
-    // Mode Démo mémoire
-    const enfant = memoryStore.enfants.find(e => (e.idEnfant || e.idenfant) === id) || null;
-    const positions = memoryStore.positions.filter(p => (p.idEnfant || p.idenfant) === id);
+    // Mode Démo mémoire : Récupérer l'élève demandé ou le tout dernier inscrit
+    let enfant = null;
+    if (id > 0) {
+      enfant = memoryStore.enfants.find(e => (e.idEnfant || e.idenfant) === id) || null;
+    } else if (memoryStore.enfants.length > 0) {
+      enfant = memoryStore.enfants[memoryStore.enfants.length - 1];
+    }
+
+    const targetId = enfant ? (enfant.idEnfant || enfant.idenfant) : id;
+    const positions = memoryStore.positions.filter(p => (p.idEnfant || p.idenfant) === targetId);
 
     return res.status(200).json({
       enfant: enfant,
@@ -49,3 +64,4 @@ module.exports = async function handler(req, res) {
     });
   }
 };
+
