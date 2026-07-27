@@ -1,37 +1,46 @@
 // API Endpoint 100% compatible avec autentification.php
-const { getPool, memoryStore } = require('../lib/db');
+const { dbQuery, getDbType, memoryStore } = require('../lib/db');
 
 module.exports = async function handler(req, res) {
+  res.setHeader('Content-Type', 'application/json');
+
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: "Méthode non autorisée" });
+    return res.status(405).json({ success: false, message: "Méthode non autorisée" });
   }
 
-  const { email, motDePasse } = req.body || {};
+  try {
+    const body = req.body || {};
+    const email = body.email || '';
+    const motDePasse = body.motDePasse || body.motDePass || '';
 
-  const pool = getPool();
-  if (pool) {
-    try {
-      const [users] = await pool.query(
-        "SELECT id, prenom, nom, motDePass FROM utilisateurs WHERE email = ?",
+    const dbType = getDbType();
+
+    if (dbType !== 'memory') {
+      const users = await dbQuery(
+        "SELECT id, prenom, nom, motDePass, motdepass FROM utilisateurs WHERE email = ?",
         [email]
       );
-      const user = users[0];
+      const user = users && users.length > 0 ? users[0] : null;
+      const storedPass = user ? (user.motDePass || user.motdepass) : null;
 
-      if (user && user.motDePass === motDePasse) {
+      if (user && storedPass === motDePasse) {
         return res.status(200).json({ success: true, message: "Mot de passe correct", userId: user.id });
       } else {
         return res.status(400).json({ success: false, message: "Mot de passe ou email incorrect" });
       }
-    } catch (err) {
-      return res.status(500).json({ error: "Erreur de connexion : " + err.message });
-    }
-  } else {
-    // Mode Démo mémoire
-    const user = memoryStore.utilisateurs.find(u => u.email === email);
-    if (user && user.motDePass === motDePasse) {
-      return res.status(200).json({ success: true, message: "Mot de passe correct", userId: user.id });
     } else {
-      return res.status(400).json({ success: false, message: "Mot de passe ou email incorrect" });
+      // Mode Démo mémoire (admin@sysloc.com / 123456)
+      const user = memoryStore.utilisateurs.find(u => u.email.toLowerCase() === email.toLowerCase());
+      const storedPass = user ? (user.motDePass || user.motdepass) : null;
+
+      if (user && storedPass === motDePasse) {
+        return res.status(200).json({ success: true, message: "Mot de passe correct", userId: user.id });
+      } else {
+        return res.status(400).json({ success: false, message: "Mot de passe ou email incorrect" });
+      }
     }
+  } catch (err) {
+    console.error("Auth API Error:", err);
+    return res.status(500).json({ success: false, message: "Erreur serveur : " + err.message });
   }
 };

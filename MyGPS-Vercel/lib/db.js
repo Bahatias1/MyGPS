@@ -1,19 +1,17 @@
 // Helper de gestion de base de données (PostgreSQL/Supabase + MySQL + Demo In-Memory)
-const mysql = require('mysql2/promise');
-const { Pool: PgPool } = require('pg');
 
 const memoryStore = {
   utilisateurs: [
-    { id: 1, prenom: "Admin", nom: "SYSLOC", email: "admin@sysloc.com", motdepass: "123456" }
+    { id: 1, prenom: "Admin", nom: "SYSLOC", email: "admin@sysloc.com", motdepass: "123456", motDePass: "123456" }
   ],
   enfants: [
-    { idenfant: 1, nom: "Kambale", postnom: "Kasereka", prenom: "Joseph", age: 7, classe: "première maternel", photo: "default.jpg" },
-    { idenfant: 2, nom: "Masika", postnom: "Kavira", prenom: "Grace", age: 6, classe: "deuxième maternel", photo: "default.jpg" }
+    { idenfant: 1, idEnfant: 1, nom: "Kambale", postnom: "Kasereka", postNom: "Kasereka", prenom: "Joseph", age: 7, classe: "première maternel", photo: "default.jpg" },
+    { idenfant: 2, idEnfant: 2, nom: "Masika", postnom: "Kavira", postNom: "Kavira", prenom: "Grace", age: 6, classe: "deuxième maternel", photo: "default.jpg" }
   ],
   positions: [
-    { id: 1, idenfant: 1, latitude: -1.6585, longitude: 29.2203, etat: 0 },
-    { id: 2, idenfant: 1, latitude: -1.6600, longitude: 29.2250, etat: 0 },
-    { id: 3, idenfant: 2, latitude: -1.6550, longitude: 29.2180, etat: 1 }
+    { id: 1, idenfant: 1, idEnfant: 1, latitude: -1.6585, longitude: 29.2203, etat: 0 },
+    { id: 2, idenfant: 1, idEnfant: 1, latitude: -1.6600, longitude: 29.2250, etat: 0 },
+    { id: 3, idenfant: 2, idEnfant: 2, latitude: -1.6550, longitude: 29.2180, etat: 1 }
   ]
 };
 
@@ -28,6 +26,7 @@ function getDbType() {
 
 function getPgPool() {
   if (!pgPool) {
+    const { Pool: PgPool } = require('pg');
     const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.SUPABASE_URL;
     pgPool = new PgPool({
       connectionString,
@@ -39,6 +38,7 @@ function getPgPool() {
 
 function getMysqlPool() {
   if (!mysqlPool) {
+    const mysql = require('mysql2/promise');
     mysqlPool = mysql.createPool({
       host: process.env.DB_HOST,
       user: process.env.DB_USER || 'root',
@@ -52,12 +52,11 @@ function getMysqlPool() {
   return mysqlPool;
 }
 
-// Unified query runner for Postgres and MySQL
+// Unified query runner for Postgres, MySQL, and Memory
 async function dbQuery(sql, params = []) {
   const type = getDbType();
   if (type === 'postgres') {
     const pool = getPgPool();
-    // Convert ? parameters to $1, $2, etc. for PostgreSQL
     let paramIndex = 1;
     const pgSql = sql.replace(/\?/g, () => `$${paramIndex++}`);
     const res = await pool.query(pgSql, params);
