@@ -79,7 +79,7 @@
 
             const data = await res.json();
 
-            if (res.ok && data.status === 'success') {
+            if (res.ok && data.success === true) {
                 window.location.href = 'afficherEnfants.html';
             } else {
                 errorMsg.style.display = 'flex';
