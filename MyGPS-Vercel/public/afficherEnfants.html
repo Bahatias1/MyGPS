@@ -3,92 +3,164 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Affichage des Enfants - SYSLOC</title>
+    <title>Liste des Enfants - SYSLOC</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <header>
-    <h2><strong>SYSLOC</strong></h2>
-    <a href="enregistrerEnfant.html">Ajouter</a>
-    <a href="afficherEnfants.html">Afficher</a>
-    <a href="index.html">Déconnexion</a>
+    <div class="header-container">
+        <a href="afficherEnfants.html" class="logo">
+            <span>SYSLOC</span>
+            <span class="logo-badge">GPS TRACKER</span>
+        </a>
+        <nav>
+            <a href="enregistrerEnfant.html" class="btn-nav-accent">+ Ajouter Enfant</a>
+            <a href="afficherEnfants.html" class="active">Mes Enfants</a>
+            <a href="index.html">Déconnexion</a>
+        </nav>
+    </div>
 </header>
 
-<div class="formEn" style="margin-top: 3%;">
-    <h2 style="text-align: center;">Liste des enfants enregistrés</h2>
-    <div class="table-container">
-        <table class="tableAff" style="margin:auto; border-collapse: collapse;" border="1">
+<main class="main-content">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+        <div>
+            <h1 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.8rem; font-weight: 800;">Enfants Enregistrés</h1>
+            <p style="color: var(--text-muted); font-size: 0.95rem;">Gérez et géolocalisez en direct vos enfants équipés d'un bracelet</p>
+        </div>
+        <a href="enregistrerEnfant.html" class="btn-primary" style="width: auto;">+ Enregistrer un enfant</a>
+    </div>
+
+    <div id="loading" style="text-align: center; padding: 3rem; color: var(--text-muted);">
+        Chargement des enfants...
+    </div>
+
+    <!-- Mode Tableau Desktop -->
+    <div class="table-container desktop-only-table" id="desktopTableWrapper" style="display: none;">
+        <table class="tableAff">
             <thead>
-                <tr class="mesth">
-                    <th>ID</th>
-                    <th>Nom</th>
-                    <th>Post-Nom</th>
-                    <th>Prénom</th>
+                <tr>
+                    <th>Photo</th>
+                    <th>ID Enfant</th>
+                    <th>Nom Complet</th>
                     <th>Âge</th>
                     <th>Classe</th>
-                    <th>Opérations</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody id="childrenTableBody">
-                <tr><td colspan="7">Chargement des données...</td></tr>
             </tbody>
         </table>
     </div>
-</div>
+
+    <!-- Mode Grille Cartes Mobile / Tablet -->
+    <div class="cards-grid" id="mobileCardsGrid" style="display: none;">
+    </div>
+</main>
 
 <script>
     async function loadChildren() {
-        const tbody = document.getElementById('childrenTableBody');
+        const loading = document.getElementById('loading');
+        const desktopWrapper = document.getElementById('desktopTableWrapper');
+        const tableBody = document.getElementById('childrenTableBody');
+        const mobileGrid = document.getElementById('mobileCardsGrid');
+
         try {
             const res = await fetch('/api/afficherEnfants');
-            const data = await res.json();
+            const enfants = await res.json();
 
-            if (data && data.length > 0) {
-                tbody.innerHTML = data.map(item => `
-                    <tr class="mestd">
-                        <td>${item.idEnfant}</td>
-                        <td>${item.nom}</td>
-                        <td>${item.postNom}</td>
-                        <td>${item.prenom}</td>
-                        <td>${item.age}</td>
-                        <td>${item.classe}</td>
-                        <td>
-                            <div class="operation">
-                                <a href="localiser.html?id=${item.idEnfant}" class="btn-action">Suivre</a>
-                                <button onclick="deleteChild(${item.idEnfant})">Effacer</button>
-                            </div>
-                        </td>
-                    </tr>
-                `).join('');
-            } else {
-                tbody.innerHTML = `<tr><td colspan="7">Aucun enfant trouvé dans la base de données.</td></tr>`;
+            loading.style.display = 'none';
+
+            if (!Array.isArray(enfants) || enfants.length === 0) {
+                loading.style.display = 'block';
+                loading.innerHTML = `
+                    <div class="card-minimal" style="text-align:center;">
+                        <h3>Aucun enfant enregistré pour le moment</h3>
+                        <p style="color:var(--text-muted);margin:0.8rem 0 1.5rem 0;">Commencez par associer un bracelet GPS à votre premier enfant.</p>
+                        <a href="enregistrerEnfant.html" class="btn-primary" style="width:auto;display:inline-flex;">+ Ajouter un Enfant</a>
+                    </div>
+                `;
+                return;
             }
+
+            desktopWrapper.style.display = 'block';
+            mobileGrid.style.display = 'grid';
+
+            tableBody.innerHTML = '';
+            mobileGrid.innerHTML = '';
+
+            enfants.forEach(e => {
+                const childId = e.idEnfant || e.idenfant;
+                const nomComplet = `${e.prenom} ${e.nom} ${e.postNom || ''}`;
+
+                // Remplissage Tableau Desktop
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        <div style="width:40px;height:40px;border-radius:50%;background:var(--primary-dark);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;">
+                            ${e.prenom.charAt(0)}
+                        </div>
+                    </td>
+                    <td><code style="background:rgba(255,255,255,0.06);padding:0.2rem 0.5rem;border-radius:4px;color:#fda4af;">#${childId}</code></td>
+                    <td><strong>${nomComplet}</strong></td>
+                    <td>${e.age} ans</td>
+                    <td><span style="color:var(--text-muted);">${e.classe}</span></td>
+                    <td>
+                        <div class="operation" style="width:auto;gap:0.5rem;">
+                            <a href="localiser.html?id=${childId}" class="btn-action">📍 Géolocaliser</a>
+                            <button onclick="deleteChild(${childId})" class="btn-action btn-danger">Supprimer</button>
+                        </div>
+                    </td>
+                `;
+                tableBody.appendChild(tr);
+
+                // Remplissage Carte Mobile
+                const card = document.createElement('div');
+                card.className = 'child-card';
+                card.innerHTML = `
+                    <div style="display:flex;align-items:center;gap:1rem;">
+                        <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg, var(--primary), var(--primary-dark));color:white;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.2rem;box-shadow:0 0 10px var(--primary-glow);">
+                            ${e.prenom.charAt(0)}
+                        </div>
+                        <div>
+                            <h3 style="margin:0;font-size:1.1rem;">${nomComplet}</h3>
+                            <p style="margin:0;color:var(--text-muted);font-size:0.85rem;">ID #${childId} • ${e.age} ans • ${e.classe}</p>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
+                        <a href="localiser.html?id=${childId}" class="btn-action" style="flex:1;text-align:center;">📍 Géolocaliser en direct</a>
+                        <button onclick="deleteChild(${childId})" class="btn-action btn-danger">Supprimer</button>
+                    </div>
+                `;
+                mobileGrid.appendChild(card);
+            });
         } catch (err) {
-            tbody.innerHTML = `<tr><td colspan="7" style="color:red;">Erreur de chargement : ${err.message}</td></tr>`;
+            loading.style.display = 'block';
+            loading.textContent = 'Erreur lors du chargement des enfants : ' + err.message;
         }
     }
 
-    async function deleteChild(idEnfant) {
-        if (!confirm("Êtes-vous sûr de vouloir supprimer les informations de cet enfant ?")) return;
+    async function deleteChild(id) {
+        if (!confirm(`Voulez-vous vraiment supprimer l'enfant #${id} ?`)) return;
+
         try {
             const res = await fetch('/api/supprimerEnfant', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ idEnfant })
+                body: JSON.stringify({ idEnfant: id })
             });
+
             const data = await res.json();
-            if (res.ok) {
-                alert(data.message || "Enfant supprimé avec succès.");
+            if (res.ok && data.success) {
                 loadChildren();
             } else {
-                alert(data.message || "Erreur lors de la suppression.");
+                alert(data.message || 'Erreur lors de la suppression.');
             }
         } catch (err) {
-            alert("Erreur serveur : " + err.message);
+            alert('Erreur serveur : ' + err.message);
         }
     }
 
-    window.onload = loadChildren;
+    loadChildren();
 </script>
 </body>
 </html>

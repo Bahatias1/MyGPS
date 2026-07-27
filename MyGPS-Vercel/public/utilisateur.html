@@ -3,70 +3,127 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inscription - SYSLOC</title>
+    <title>Inscription Parent - SYSLOC</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="formEng">
-        <h2 style="text-align: center; padding: 2%;">Complétez vos paramètres</h2>
-        <form id="signupForm">
-            <table style="padding: 3%; margin-left: 20%;">
-                <tr>
-                    <td><label for="prenom"><strong>Prénom</strong></label></td>
-                    <td><input type="text" id="prenom" required></td>
-                </tr>
-                <tr>
-                    <td><label for="nom"><strong>Nom</strong></label></td>
-                    <td><input type="text" id="nom" required></td>
-                </tr>
-                <tr>
-                    <td><label for="email"><strong>Email</strong></label></td>
-                    <td><input type="email" id="email" required></td>
-                </tr>
-                <tr>
-                    <td><label for="motDePasse"><strong>Mot de passe</strong></label></td>
-                    <td><input type="password" id="motDePasse" required></td>
-                </tr>
-                <tr>
-                    <td><label for="motDePasseConfirme"><strong>Confirmez mot de passe</strong></label></td>
-                    <td><input type="password" id="motDePasseConfirme" required></td>
-                </tr>
-            </table>
-            <div class="enreg" style="margin-left: 40%;">
-                <input type="submit" value="Enregistrer">
-            </div>
-        </form>
-        <div id="message" style="text-align:center; margin-top:10px;"></div>
-        <p style="color: black; text-align:center;">Avez-vous déjà un compte ? <a href="index.html">Connectez-vous</a></p>
+<header>
+    <div class="header-container">
+        <a href="index.html" class="logo">
+            <span>SYSLOC</span>
+            <span class="logo-badge">GPS TRACKER</span>
+        </a>
+        <nav>
+            <a href="index.html">Connexion</a>
+            <a href="utilisateur.html" class="active">Inscription</a>
+        </nav>
     </div>
+</header>
 
-    <script>
-        document.getElementById('signupForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const prenom = document.getElementById('prenom').value;
-            const nom = document.getElementById('nom').value;
-            const email = document.getElementById('email').value;
-            const motDePasse = document.getElementById('motDePasse').value;
-            const motDePasseConfirme = document.getElementById('motDePasseConfirme').value;
-            const msgDiv = document.getElementById('message');
+<main class="main-content">
+    <div class="form-card-wrapper">
+        <div class="card-minimal">
+            <div class="form-header">
+                <h2>Créer un Compte Parent</h2>
+                <p>Enregistrez-vous pour suivre votre enfant en toute sécurité</p>
+            </div>
 
-            try {
-                const response = await fetch('/api/utilisateur', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prenom, nom, email, motDePasse, motDePasseConfirme })
-                });
-                const data = await response.json();
-                if (response.ok && data.success) {
-                    msgDiv.innerHTML = "<p style='color:green;'>Données enregistrées avec succès ! Redirection...</p>";
-                    setTimeout(() => window.location.href = "index.html", 1000);
-                } else {
-                    msgDiv.innerHTML = `<p style='color:red;'>${data.message || 'Erreur d\'inscription'}</p>`;
-                }
-            } catch (err) {
-                msgDiv.innerHTML = `<p style='color:red;'>Erreur serveur : ${err.message}</p>`;
+            <div id="errorMsg" class="alert alert-error" style="display: none;"></div>
+            <div id="successMsg" class="alert alert-success" style="display: none;"></div>
+
+            <form id="signupForm">
+                <div class="form-group">
+                    <label for="prenom">Prénom</label>
+                    <input type="text" id="prenom" name="prenom" placeholder="Votre prénom" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="nom">Nom</label>
+                    <input type="text" id="nom" name="nom" placeholder="Votre nom" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Adresse Email</label>
+                    <input type="email" id="email" name="email" placeholder="exemple@sysloc.com" required autocomplete="email">
+                </div>
+
+                <div class="form-group">
+                    <label for="motdepass">Mot de passe</label>
+                    <input type="password" id="motdepass" name="motdepass" placeholder="••••••••" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="motdepassconfirm">Confirmer le mot de passe</label>
+                    <input type="password" id="motdepassconfirm" name="motdepassconfirm" placeholder="••••••••" required>
+                </div>
+
+                <div style="margin-top: 2rem;">
+                    <button type="submit" class="btn-primary" id="btnSubmit">
+                        <span>Créer mon compte</span>
+                    </button>
+                </div>
+            </form>
+
+            <div style="text-align: center; margin-top: 1.5rem;">
+                <p style="color: var(--text-dim); font-size: 0.9rem;">
+                    Vous avez déjà un compte ? 
+                    <a href="index.html" style="color: var(--primary-hover); text-decoration: none; font-weight: 600;">Connectez-vous</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    document.getElementById('signupForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const prenom = document.getElementById('prenom').value;
+        const nom = document.getElementById('nom').value;
+        const email = document.getElementById('email').value;
+        const motdepass = document.getElementById('motdepass').value;
+        const motdepassconfirm = document.getElementById('motdepassconfirm').value;
+
+        const errorMsg = document.getElementById('errorMsg');
+        const successMsg = document.getElementById('successMsg');
+        const btnSubmit = document.getElementById('btnSubmit');
+
+        errorMsg.style.display = 'none';
+        successMsg.style.display = 'none';
+
+        if (motdepass !== motdepassconfirm) {
+            errorMsg.style.display = 'flex';
+            errorMsg.textContent = 'Les mots de passe ne correspondent pas.';
+            return;
+        }
+
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = '<span>Inscription en cours...</span>';
+
+        try {
+            const res = await fetch('/api/utilisateur', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prenom, nom, email, motdepass, motdepassconfirm })
+            });
+
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+                successMsg.style.display = 'flex';
+                successMsg.textContent = 'Compte créé avec succès ! Redirection vers la connexion...';
+                setTimeout(() => window.location.href = 'index.html', 1500);
+            } else {
+                errorMsg.style.display = 'flex';
+                errorMsg.textContent = data.message || 'Erreur lors de la création du compte.';
             }
-        });
-    </script>
+        } catch (err) {
+            errorMsg.style.display = 'flex';
+            errorMsg.textContent = 'Erreur serveur : ' + err.message;
+        } finally {
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = '<span>Créer mon compte</span>';
+        }
+    });
+</script>
 </body>
 </html>

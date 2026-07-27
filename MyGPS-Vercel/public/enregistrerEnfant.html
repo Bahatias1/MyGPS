@@ -3,54 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ajouter un enfant - SYSLOC</title>
+    <title>Ajouter un Enfant - SYSLOC</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <header>
-    <h2><strong>SYSLOC</strong></h2>
-    <a href="enregistrerEnfant.html">Ajouter</a>
-    <a href="afficherEnfants.html">Afficher</a>
-    <a href="index.html">Déconnexion</a>
+    <div class="header-container">
+        <a href="afficherEnfants.html" class="logo">
+            <span>SYSLOC</span>
+            <span class="logo-badge">GPS TRACKER</span>
+        </a>
+        <nav>
+            <a href="enregistrerEnfant.html" class="active btn-nav-accent">+ Ajouter Enfant</a>
+            <a href="afficherEnfants.html">Mes Enfants</a>
+            <a href="index.html">Déconnexion</a>
+        </nav>
+    </div>
 </header>
 
-<div class="formEng">
-    <h2 style="text-align: center;">Les informations de l'enfant</h2>
-    <form id="childForm">
-        <table style="margin: auto;">
-            <tr>
-                <td><label for="nom"><strong>Nom</strong></label></td>
-                <td><input type="text" id="nom" required></td>
-            </tr>
-            <tr>
-                <td><label for="postNom"><strong>Post-Nom</strong></label></td>
-                <td><input type="text" id="postNom" required></td>
-            </tr>
-            <tr>
-                <td><label for="prenom"><strong>Prénom</strong></label></td>
-                <td><input type="text" id="prenom" required></td>
-            </tr>
-            <tr>
-                <td><label for="age"><strong>Âge</strong></label></td>
-                <td><input type="number" id="age" required></td>
-            </tr>
-            <tr>
-                <td><label for="classe"><strong>Classe</strong></label></td>
-                <td>
-                    <select id="classe">
+<main class="main-content">
+    <div class="form-card-wrapper">
+        <div class="card-minimal">
+            <div class="form-header">
+                <h2>Enregistrer un Enfant</h2>
+                <p>Associez le bracelet GPS à votre enfant</p>
+            </div>
+
+            <div id="errorMsg" class="alert alert-error" style="display: none;"></div>
+            <div id="successMsg" class="alert alert-success" style="display: none;"></div>
+
+            <form id="childForm">
+                <div class="form-group">
+                    <label for="nom">Nom de l'enfant</label>
+                    <input type="text" id="nom" name="nom" placeholder="Ex: Mussa" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="postNom">Post-Nom</label>
+                    <input type="text" id="postNom" name="postNom" placeholder="Ex: Erickson" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="prenom">Prénom</label>
+                    <input type="text" id="prenom" name="prenom" placeholder="Ex: Erick" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="age">Âge (Ans)</label>
+                    <input type="number" id="age" name="age" min="1" max="18" placeholder="Ex: 4" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="classe">Classe / Niveau</label>
+                    <select id="classe" name="classe" required>
                         <option value="première maternel">Première maternel</option>
                         <option value="deuxième maternel">Deuxième maternel</option>
                         <option value="troisième maternel">Troisième maternel</option>
+                        <option value="1ère Primaire">1ère Primaire</option>
+                        <option value="2ème Primaire">2ème Primaire</option>
+                        <option value="3ème Primaire">3ème Primaire</option>
+                        <option value="4ème Primaire">4ème Primaire</option>
+                        <option value="5ème Primaire">5ème Primaire</option>
+                        <option value="6ème Primaire">6ème Primaire</option>
                     </select>
-                </td>
-            </tr>
-        </table>
-        <div class="enreg" style="margin-left: 40%; margin-top: 15px;">
-            <input type="submit" value="Enregistrer">
+                </div>
+
+                <div style="margin-top: 2rem;">
+                    <button type="submit" class="btn-primary" id="btnSubmit">
+                        <span>Enregistrer l'enfant</span>
+                    </button>
+                </div>
+            </form>
         </div>
-    </form>
-    <div id="message" style="text-align:center; margin-top:10px;"></div>
-</div>
+    </div>
+</main>
 
 <script>
     document.getElementById('childForm').addEventListener('submit', async function(e) {
@@ -60,23 +86,40 @@
         const prenom = document.getElementById('prenom').value;
         const age = document.getElementById('age').value;
         const classe = document.getElementById('classe').value;
-        const msgDiv = document.getElementById('message');
+
+        const errorMsg = document.getElementById('errorMsg');
+        const successMsg = document.getElementById('successMsg');
+        const btnSubmit = document.getElementById('btnSubmit');
+
+        errorMsg.style.display = 'none';
+        successMsg.style.display = 'none';
+
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = '<span>Enregistrement en cours...</span>';
 
         try {
-            const response = await fetch('/api/enregistrerEnfant', {
+            const res = await fetch('/api/enregistrerEnfant', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ nom, postNom, prenom, age, classe, photo: "default.jpg" })
+                body: JSON.stringify({ nom, postNom, prenom, age, classe, photo: 'default.jpg' })
             });
-            const data = await response.json();
-            if (response.ok && data.success) {
-                msgDiv.innerHTML = "<p style='color:green;'>Données enregistrées avec succès !</p>";
-                setTimeout(() => window.location.href = "afficherEnfants.html", 1000);
+
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+                successMsg.style.display = 'flex';
+                successMsg.textContent = 'Enfant enregistré avec succès ! Redirection...';
+                setTimeout(() => window.location.href = 'afficherEnfants.html', 1500);
             } else {
-                msgDiv.innerHTML = `<p style='color:red;'>${data.message || 'Erreur lors de l\'enregistrement'}</p>`;
+                errorMsg.style.display = 'flex';
+                errorMsg.textContent = data.message || "Erreur lors de l'enregistrement.";
             }
         } catch (err) {
-            msgDiv.innerHTML = `<p style='color:red;'>Erreur serveur : ${err.message}</p>`;
+            errorMsg.style.display = 'flex';
+            errorMsg.textContent = 'Erreur serveur : ' + err.message;
+        } finally {
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = '<span>Enregistrer l\'enfant</span>';
         }
     });
 </script>

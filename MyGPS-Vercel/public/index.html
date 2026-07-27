@@ -3,55 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Authentification - SYSLOC</title>
+    <title>Connexion - SYSLOC (MyGPS)</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="formEng">
-        <h2 style="text-align: center; padding: 2%;">Authentification</h2>
-        <form id="loginForm">
-            <table style="padding: 3%; margin-left: 25%;">
-                <tr>
-                    <td><label for="email"><strong>Email</strong></label></td>
-                    <td><input type="email" id="email" name="email" required></td>
-                </tr>
-                <tr>
-                    <td><label for="motDePasse"><strong>Mot de passe</strong></label></td>
-                    <td><input type="password" id="motDePasse" name="motDePasse" required></td>
-                </tr>
-            </table>
-            <div class="enreg" style="margin-left: 42%;">
-                <input type="submit" value="Se connecter">
-            </div>
-        </form>
-        <div id="message" style="text-align:center; margin-top:10px;"></div>
-        <p style="color: black; text-align:center;"><a href="utilisateur.html">Vous n'avez pas encore de compte ? Inscrivez-vous</a></p>
+<header>
+    <div class="header-container">
+        <a href="index.html" class="logo">
+            <span>SYSLOC</span>
+            <span class="logo-badge">GPS TRACKER</span>
+        </a>
+        <nav>
+            <a href="index.html" class="active">Connexion</a>
+            <a href="utilisateur.html">Inscription</a>
+        </nav>
     </div>
+</header>
 
-    <script>
-        document.getElementById('loginForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const email = document.getElementById('email').value;
-            const motDePasse = document.getElementById('motDePasse').value;
-            const msgDiv = document.getElementById('message');
+<main class="main-content">
+    <div class="form-card-wrapper">
+        <div class="card-minimal">
+            <div class="form-header">
+                <h2>Connexion Parent</h2>
+                <p>Accédez au suivi en temps réel de votre enfant</p>
+            </div>
 
-            try {
-                const response = await fetch('/api/autentification', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, motDePasse })
-                });
-                const data = await response.json();
-                if (response.ok && data.success) {
-                    msgDiv.innerHTML = "<p style='color:green;'>Mot de passe correct ! Redirection...</p>";
-                    setTimeout(() => window.location.href = "afficherEnfants.html", 1000);
-                } else {
-                    msgDiv.innerHTML = `<p style='color:red;'>${data.message || 'Erreur d\'authentification'}</p>`;
-                }
-            } catch (err) {
-                msgDiv.innerHTML = `<p style='color:red;'>Erreur serveur : ${err.message}</p>`;
+            <div id="errorMsg" class="alert alert-error" style="display: none;"></div>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">Adresse Email</label>
+                    <input type="email" id="email" name="email" placeholder="admin@sysloc.com" required autocomplete="email">
+                </div>
+
+                <div class="form-group">
+                    <label for="motdepass">Mot de passe</label>
+                    <input type="password" id="motdepass" name="motdepass" placeholder="••••••••" required autocomplete="current-password">
+                </div>
+
+                <div style="margin-top: 2rem;">
+                    <button type="submit" class="btn-primary" id="btnSubmit">
+                        <span>Se connecter</span>
+                    </button>
+                </div>
+            </form>
+
+            <div style="text-align: center; margin-top: 1.5rem;">
+                <p style="color: var(--text-dim); font-size: 0.9rem;">
+                    Vous n'avez pas de compte ? 
+                    <a href="utilisateur.html" style="color: var(--primary-hover); text-decoration: none; font-weight: 600;">Inscrivez-vous</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const email = document.getElementById('email').value;
+        const motdepass = document.getElementById('motdepass').value;
+        const errorMsg = document.getElementById('errorMsg');
+        const btnSubmit = document.getElementById('btnSubmit');
+
+        errorMsg.style.display = 'none';
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = '<span>Connexion en cours...</span>';
+
+        try {
+            const res = await fetch('/api/autentification', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, motdepass })
+            });
+
+            const data = await res.json();
+
+            if (res.ok && data.status === 'success') {
+                window.location.href = 'afficherEnfants.html';
+            } else {
+                errorMsg.style.display = 'flex';
+                errorMsg.textContent = data.message || 'Identifiants incorrects.';
             }
-        });
-    </script>
+        } catch (err) {
+            errorMsg.style.display = 'flex';
+            errorMsg.textContent = 'Erreur serveur : ' + err.message;
+        } finally {
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = '<span>Se connecter</span>';
+        }
+    });
+</script>
 </body>
 </html>

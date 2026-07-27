@@ -8,33 +8,39 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
         #map {
-            height: 520px;
-            width: 92%;
-            margin: 20px auto;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            height: 560px;
+            width: 100%;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-card);
         }
-        .info-card {
-            background: white;
-            padding: 20px;
-            margin: 20px auto;
-            width: 88%;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        .leaflet-container {
+            background: #0f172a !important;
+        }
+        .info-card-minimal {
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow-card);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
         .live-badge {
             display: inline-flex;
             align-items: center;
-            background: #e6fffa;
-            color: #047857;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-weight: bold;
-            font-size: 0.9em;
-            border: 1px solid #a7f3d0;
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            padding: 0.5rem 1rem;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            border: 1px solid rgba(16, 185, 129, 0.3);
         }
         .dot {
             height: 10px;
@@ -51,9 +57,9 @@
             100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
         }
         .status-alert {
-            background: #fee2e2;
-            color: #dc2626;
-            border-color: #fca5a5;
+            background: rgba(239, 68, 68, 0.15);
+            color: #fca5a5;
+            border-color: rgba(239, 68, 68, 0.4);
         }
         .status-alert .dot {
             background-color: #ef4444;
@@ -62,23 +68,32 @@
 </head>
 <body>
 <header>
-    <h2><strong>SYSLOC</strong></h2>
-    <a href="enregistrerEnfant.html">Ajouter</a>
-    <a href="afficherEnfants.html">Afficher</a>
-    <a href="index.html">Déconnexion</a>
+    <div class="header-container">
+        <a href="afficherEnfants.html" class="logo">
+            <span>SYSLOC</span>
+            <span class="logo-badge">GPS TRACKER</span>
+        </a>
+        <nav>
+            <a href="enregistrerEnfant.html" class="btn-nav-accent">+ Ajouter Enfant</a>
+            <a href="afficherEnfants.html">Mes Enfants</a>
+            <a href="index.html">Déconnexion</a>
+        </nav>
+    </div>
 </header>
 
-<div class="info-card" id="childDetails">
-    <div>
-        <h2>Détails de l'enfant</h2>
-        <p>Chargement des données de géolocalisation...</p>
+<main class="main-content">
+    <div class="info-card-minimal" id="childDetails">
+        <div>
+            <h2 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.5rem; font-weight: 700; color: var(--text-main);">Détails de l'enfant</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">Chargement des données du bracelet GPS...</p>
+        </div>
+        <div class="live-badge" id="liveBadge">
+            <span class="dot"></span> Connexion au Bracelet GPS...
+        </div>
     </div>
-    <div class="live-badge" id="liveBadge">
-        <span class="dot"></span> Suivi GPS En Direct
-    </div>
-</div>
 
-<div id="map"></div>
+    <div id="map"></div>
+</main>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
@@ -88,9 +103,10 @@
     // Initialiser la carte Leaflet sur Goma
     const map = L.map('map').setView([-1.6585, 29.2203], 15);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    // Couche OpenStreetMap en Mode Sombre/Minimal
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
         maxZoom: 19,
-        attribution: '© OpenStreetMap'
+        attribution: '© OpenStreetMap © CARTO'
     }).addTo(map);
 
     let currentMarker = null;
@@ -108,13 +124,13 @@
 
             if (data.enfant) {
                 detailsDiv.children[0].innerHTML = `
-                    <h2 style="margin:0;color:#6d0b2c;">Enfant suivi : ${data.enfant.prenom} ${data.enfant.nom} ${data.enfant.postNom || ''}</h2>
-                    <p style="margin:5px 0 0 0;color:#555;"><strong>Âge :</strong> ${data.enfant.age} ans | <strong>Classe :</strong> ${data.enfant.classe}</p>
+                    <h2 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.5rem;font-weight:800;color:var(--text-main);margin:0;">Enfant suivi : ${data.enfant.prenom} ${data.enfant.nom} ${data.enfant.postNom || ''}</h2>
+                    <p style="margin:5px 0 0 0;color:var(--text-muted);font-size:0.9rem;"><strong>Âge :</strong> ${data.enfant.age} ans | <strong>Classe :</strong> ${data.enfant.classe}</p>
                 `;
             }
 
             if (data.positions && data.positions.length > 0) {
-                // Filtrer les positions réelles non nulles
+                // Filtrer les positions valides
                 const validPositions = data.positions.filter(p => parseFloat(p.latitude) !== 0 && parseFloat(p.longitude) !== 0);
                 const posList = validPositions.length > 0 ? validPositions : data.positions;
 
@@ -122,16 +138,16 @@
                 const lastPos = posList[posList.length - 1];
                 const isAlert = parseInt(lastPos.etat) === 1;
 
-                // Mise à jour du badge d'état
+                // Badge d'état
                 if (isAlert) {
                     badgeDiv.className = "live-badge status-alert";
-                    badgeDiv.innerHTML = `<span class="dot"></span> ⚠️ BOUTON SOS PRESSÉ ! DANGER`;
+                    badgeDiv.innerHTML = `<span class="dot"></span> ⚠️ ALERTE DANGER / BOUTON SOS PRESSÉ`;
                 } else {
                     badgeDiv.className = "live-badge";
-                    badgeDiv.innerHTML = `<span class="dot"></span> Signal GPS Actif (${posList.length} points de passage)`;
+                    badgeDiv.innerHTML = `<span class="dot"></span> En Direct (${posList.length} positions enregistrées)`;
                 }
 
-                // 1. Vider et redistribuer les petits points de passage historiques
+                // 1. Points de passage historiques cliquables
                 historyLayerGroup.clearLayers();
                 const latLngs = [];
 
@@ -140,38 +156,39 @@
                     const lng = parseFloat(p.longitude);
                     latLngs.push([lat, lng]);
 
-                    // Ajouter un petit point de passage discret pour chaque étape historique
                     if (idx < posList.length - 1) {
                         const circle = L.circleMarker([lat, lng], {
                             radius: 5,
-                            fillColor: p.etat === 1 ? '#ef4444' : '#3b82f6',
+                            fillColor: p.etat === 1 ? '#ef4444' : '#e11d48',
                             color: '#ffffff',
                             weight: 1,
                             opacity: 0.9,
                             fillOpacity: 0.8
                         });
                         circle.bindPopup(`
-                            <strong>Étape ${idx + 1} / ${posList.length}</strong><br>
-                            Lat: ${lat}<br>Lng: ${lng}<br>
-                            Statut: ${p.etat === 1 ? '<span style="color:red;">SOS</span>' : '<span style="color:green;">Normal</span>'}
+                            <div style="color:#0f172a;">
+                                <strong>Étape ${idx + 1} / ${posList.length}</strong><br>
+                                Lat: ${lat}<br>Lng: ${lng}<br>
+                                Statut: ${p.etat === 1 ? '<span style="color:red;font-weight:bold;">SOS</span>' : '<span style="color:green;font-weight:bold;">Normal</span>'}
+                            </div>
                         `);
                         historyLayerGroup.addLayer(circle);
                     }
                 });
 
-                // 2. Tracer la ligne continue de parcours (Trajectoire complète)
+                // 2. Ligne de trajectoire (Polyline)
                 if (pathPolyline) {
                     pathPolyline.setLatLngs(latLngs);
                 } else {
                     pathPolyline = L.polyline(latLngs, {
-                        color: '#2563eb',
+                        color: '#e11d48',
                         weight: 4,
-                        opacity: 0.75,
+                        opacity: 0.85,
                         dashArray: '6, 6'
                     }).addTo(map);
                 }
 
-                // 3. Marqueur principal sur la Position Actuelle (dernière étape)
+                // 3. Marqueur principal Position Actuelle
                 const currentLatLng = [parseFloat(lastPos.latitude), parseFloat(lastPos.longitude)];
 
                 if (currentMarker) {
@@ -181,15 +198,14 @@
                 }
 
                 currentMarker.bindPopup(`
-                    <div style="text-align:center;">
-                        <strong style="font-size:1.1em;color:#6d0b2c;">📍 Position Actuelle (En Direct)</strong><br>
+                    <div style="text-align:center;color:#0f172a;">
+                        <strong style="font-size:1.1em;color:#9f1239;">📍 Position Actuelle en Direct</strong><br>
                         <strong>Enfant :</strong> ${data.enfant ? data.enfant.prenom + ' ' + data.enfant.nom : ''}<br>
                         <strong>Lat :</strong> ${lastPos.latitude} | <strong>Lng :</strong> ${lastPos.longitude}<br>
                         <strong>Statut :</strong> ${isAlert ? '<span style="color:red;font-weight:bold;">⚠️ DANGER / SOS</span>' : '<span style="color:green;font-weight:bold;">🟢 Normal</span>'}
                     </div>
                 `).openPopup();
 
-                // Centrer lors du premier chargement
                 if (isFirstLoad) {
                     map.setView(currentLatLng, 16);
                     isFirstLoad = false;
