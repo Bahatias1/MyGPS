@@ -1,13 +1,14 @@
 {
   "name": "mygps-vercel",
   "version": "1.0.0",
-  "description": "Système de géolocalisation d'enfants (SYSLOC / MyGPS) compatible Vercel",
+  "description": "Système de géolocalisation d'enfants (SYSLOC / MyGPS) compatible Vercel et Supabase",
   "main": "api/etat.js",
   "scripts": {
     "dev": "vercel dev",
     "start": "node server.js"
   },
   "dependencies": {
-    "mysql2": "^3.9.2"
+    "mysql2": "^3.9.2",
+    "pg": "^8.11.3"
   }
 }

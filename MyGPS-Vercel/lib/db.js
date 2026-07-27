@@ -1,7 +1,7 @@
-// Helper de gestion de base de données (MySQL / Demo In-Memory)
+// Helper de gestion de base de données (PostgreSQL/Supabase + MySQL + Demo In-Memory)
 const mysql = require('mysql2/promise');
+const { Pool: PgPool } = require('pg');
 
-// In-Memory store for demonstration when MySQL env vars are not set
 const memoryStore = {
   utilisateurs: [
     { id: 1, prenom: "Admin", nom: "SYSLOC", email: "admin@sysloc.com", motDePass: "123456" }
@@ -17,25 +17,45 @@ const memoryStore = {
   ]
 };
 
-let pool = null;
+let mysqlPool = null;
+let pgPool = null;
+
+function getDbType() {
+  if (process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.SUPABASE_URL) return 'postgres';
+  if (process.env.DB_HOST) return 'mysql';
+  return 'memory';
+}
 
 function getPool() {
-  if (!pool && process.env.DB_HOST) {
-    pool = mysql.createPool({
-      host: process.env.DB_HOST,
-      user: process.env.DB_USER || 'root',
-      password: process.env.DB_PASSWORD || '',
-      database: process.env.DB_NAME || 'localisation',
-      port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : 3306,
-      waitForConnections: true,
-      connectionLimit: 10,
-      queueLimit: 0
-    });
+  const type = getDbType();
+  if (type === 'postgres') {
+    if (!pgPool) {
+      const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+      pgPool = new PgPool({
+        connectionString,
+        ssl: { rejectUnauthorized: false }
+      });
+    }
+    return { type: 'postgres', pool: pgPool };
+  } else if (type === 'mysql') {
+    if (!mysqlPool) {
+      mysqlPool = mysql.createPool({
+        host: process.env.DB_HOST,
+        user: process.env.DB_USER || 'root',
+        password: process.env.DB_PASSWORD || '',
+        database: process.env.DB_NAME || 'localisation',
+        port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : 3306,
+        waitForConnections: true,
+        connectionLimit: 10
+      });
+    }
+    return { type: 'mysql', pool: mysqlPool };
   }
-  return pool;
+  return { type: 'memory', pool: null };
 }
 
 module.exports = {
   getPool,
+  getDbType,
   memoryStore
 };
