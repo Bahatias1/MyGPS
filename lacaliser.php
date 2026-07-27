@@ -58,21 +58,36 @@ try {
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
-        // Initialiser la carte centrée sur Goma, RDC
-        var map = L.map('map').setView([-1.6585, 29.2203], 12); // Coordonnées de Goma
+        var map = L.map('map').setView([-1.6585, 29.2203], 15);
 
-        // Ajouter une couche de tuiles (OpenStreetMap)
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 500,
+            maxZoom: 19,
             attribution: '© OpenStreetMap'
         }).addTo(map);
 
-        <?php foreach($positions as $position): ?>
-        // Ajouter un marqueur à chaque position
-        L.marker([<?= $position->latitude ?>, <?= $position->longitude ?>]).addTo(map)
-            .bindPopup('Latitude: <?= $position->latitude ?>, Longitude: <?= $position->longitude ?>')
-            .openPopup();
-        <?php endforeach; ?>
+        var positions = <?= json_encode($positions) ?>;
+        if (positions && positions.length > 0) {
+            var latLngs = positions.map(function(p) {
+                return [parseFloat(p.latitude), parseFloat(p.longitude)];
+            });
+
+            // Tracer la ligne de parcours
+            L.polyline(latLngs, { color: '#2563eb', weight: 4, opacity: 0.7, dashArray: '8, 8' }).addTo(map);
+
+            // Afficher le marqueur unique de la position actuelle (dernière reçue)
+            var lastPos = positions[positions.length - 1];
+            var currentLatLng = [parseFloat(lastPos.latitude), parseFloat(lastPos.longitude)];
+            var isAlert = parseInt(lastPos.etat) === 1;
+
+            var marker = L.marker(currentLatLng).addTo(map);
+            marker.bindPopup(
+                '<strong>📍 Position Actuelle</strong><br>' +
+                'Latitude: ' + lastPos.latitude + '<br>Longitude: ' + lastPos.longitude + '<br>' +
+                'Statut: ' + (isAlert ? '<span style="color:red;font-weight:bold;">⚠️ DANGER / SOS</span>' : '<span style="color:green;">🟢 Normal</span>')
+            ).openPopup();
+
+            map.setView(currentLatLng, 16);
+        }
     </script>
 </body>
 </html>

@@ -8,19 +8,55 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
         #map {
-            height: 500px;
-            width: 90%;
+            height: 520px;
+            width: 92%;
             margin: 20px auto;
             border-radius: 15px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
         }
         .info-card {
             background: white;
-            padding: 15px;
+            padding: 20px;
             margin: 20px auto;
-            width: 85%;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            width: 88%;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .live-badge {
+            display: inline-flex;
+            align-items: center;
+            background: #e6fffa;
+            color: #047857;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9em;
+            border: 1px solid #a7f3d0;
+        }
+        .dot {
+            height: 10px;
+            width: 10px;
+            background-color: #10b981;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+        .status-alert {
+            background: #fee2e2;
+            color: #dc2626;
+            border-color: #fca5a5;
+        }
+        .status-alert .dot {
+            background-color: #ef4444;
         }
     </style>
 </head>
@@ -33,26 +69,33 @@
 </header>
 
 <div class="info-card" id="childDetails">
-    <h2>Détails de l'enfant</h2>
-    <p>Chargement des détails...</p>
+    <div>
+        <h2>Détails de l'enfant</h2>
+        <p>Chargement des données de géolocalisation...</p>
+    </div>
+    <div class="live-badge" id="liveBadge">
+        <span class="dot"></span> Suivi GPS En Direct
+    </div>
 </div>
 
 <div id="map"></div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
-    // URL Parameter id
     const urlParams = new URLSearchParams(window.location.search);
-    const childId = urlParams.get('id') || 1;
+    const childId = urlParams.get('id') || 2;
 
-    // Initialiser la carte centrée sur Goma, RDC
-    const map = L.map('map').setView([-1.6585, 29.2203], 13); // Coordonnées de Goma
+    // Initialiser la carte Leaflet sur Goma
+    const map = L.map('map').setView([-1.6585, 29.2203], 15);
 
-    // Couche OpenStreetMap
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '© OpenStreetMap'
     }).addTo(map);
+
+    let currentMarker = null;
+    let pathPolyline = null;
+    let isFirstLoad = true;
 
     async function loadTrackingData() {
         try {
@@ -60,39 +103,81 @@
             const data = await res.json();
 
             const detailsDiv = document.getElementById('childDetails');
+            const badgeDiv = document.getElementById('liveBadge');
+
             if (data.enfant) {
-                detailsDiv.innerHTML = `
-                    <h2>Enfant suivi : ${data.enfant.prenom} ${data.enfant.nom} ${data.enfant.postNom || ''}</h2>
-                    <p><strong>Âge :</strong> ${data.enfant.age} ans | <strong>Classe :</strong> ${data.enfant.classe}</p>
+                detailsDiv.children[0].innerHTML = `
+                    <h2 style="margin:0;color:#6d0b2c;">Enfant suivi : ${data.enfant.prenom} ${data.enfant.nom} ${data.enfant.postNom || ''}</h2>
+                    <p style="margin:5px 0 0 0;color:#555;"><strong>Âge :</strong> ${data.enfant.age} ans | <strong>Classe :</strong> ${data.enfant.classe}</p>
                 `;
-            } else {
-                detailsDiv.innerHTML = `<p style="color:red;">Aucun enfant trouvé avec cet ID.</p>`;
             }
 
             if (data.positions && data.positions.length > 0) {
-                data.positions.forEach(pos => {
-                    const isAlert = pos.etat === 1;
-                    const markerColor = isAlert ? 'red' : 'blue';
-                    
-                    const marker = L.marker([pos.latitude, pos.longitude]).addTo(map);
-                    marker.bindPopup(`
-                        <strong>Latitude :</strong> ${pos.latitude}<br>
-                        <strong>Longitude :</strong> ${pos.longitude}<br>
-                        <strong>Statut :</strong> ${isAlert ? '<span style="color:red;font-weight:bold;">ALERTE SOS / DANGER</span>' : '<span style="color:green;">Normal</span>'}
-                    `);
-                    if (isAlert) marker.openPopup();
-                });
+                // Récupérer uniquement les positions valides (non nulles)
+                const validPositions = data.positions.filter(p => parseFloat(p.latitude) !== 0 && parseFloat(p.longitude) !== 0);
+                const posList = validPositions.length > 0 ? validPositions : data.positions;
 
-                // Centrer sur la dernière position connue
-                const lastPos = data.positions[data.positions.length - 1];
-                map.setView([lastPos.latitude, lastPos.longitude], 14);
+                // Extraire la toute dernière position reçue du bracelet
+                const lastPos = posList[posList.length - 1];
+                const isAlert = parseInt(lastPos.etat) === 1;
+
+                // Mise à jour du badge Alerte / Normal
+                if (isAlert) {
+                    badgeDiv.className = "live-badge status-alert";
+                    badgeDiv.innerHTML = `<span class="dot"></span> ⚠️ BOUTON SOS PRESSÉ ! DANGER`;
+                } else {
+                    badgeDiv.className = "live-badge";
+                    badgeDiv.innerHTML = `<span class="dot"></span> Signal GPS Actif (${posList.length} positions enregistrées)`;
+                }
+
+                // 1. Tracer le chemin/parcours de déplacement (Polyline bleue)
+                const latLngs = posList.map(p => [parseFloat(p.latitude), parseFloat(p.longitude)]);
+
+                if (pathPolyline) {
+                    pathPolyline.setLatLngs(latLngs);
+                } else {
+                    pathPolyline = L.polyline(latLngs, {
+                        color: '#2563eb',
+                        weight: 4,
+                        opacity: 0.7,
+                        dashArray: '8, 8'
+                    }).addTo(map);
+                }
+
+                // 2. Mettre à jour le Marqueur Unique de la Position Actuelle
+                const currentLatLng = [parseFloat(lastPos.latitude), parseFloat(lastPos.longitude)];
+
+                if (currentMarker) {
+                    currentMarker.setLatLng(currentLatLng);
+                } else {
+                    currentMarker = L.marker(currentLatLng).addTo(map);
+                }
+
+                currentMarker.bindPopup(`
+                    <div style="text-align:center;">
+                        <strong style="font-size:1.1em;color:#6d0b2c;">📍 Position Actuelle</strong><br>
+                        <strong>Enfant :</strong> ${data.enfant ? data.enfant.prenom + ' ' + data.enfant.nom : ''}<br>
+                        <strong>Lat :</strong> ${lastPos.latitude} | <strong>Lng :</strong> ${lastPos.longitude}<br>
+                        <strong>Statut :</strong> ${isAlert ? '<span style="color:red;font-weight:bold;">⚠️ DANGER / SOS</span>' : '<span style="color:green;font-weight:bold;">🟢 Normal</span>'}
+                    </div>
+                `).openPopup();
+
+                // Centrer la carte lors du premier chargement ou recentrage
+                if (isFirstLoad) {
+                    map.setView(currentLatLng, 16);
+                    isFirstLoad = false;
+                }
             }
         } catch (err) {
-            console.error("Erreur de chargement des positions:", err);
+            console.error("Erreur de rafraîchissement GPS:", err);
         }
     }
 
+    // Premier chargement immédiat
     loadTrackingData();
+
+    // Rafraîchissement automatique toutes les 5 secondes (Temps réel)
+    setInterval(loadTrackingData, 5000);
 </script>
 </body>
 </html>
