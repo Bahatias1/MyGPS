@@ -95,6 +95,7 @@
 
     let currentMarker = null;
     let pathPolyline = null;
+    let historyLayerGroup = L.layerGroup().addTo(map);
     let isFirstLoad = true;
 
     async function loadTrackingData() {
@@ -113,38 +114,64 @@
             }
 
             if (data.positions && data.positions.length > 0) {
-                // Récupérer uniquement les positions valides (non nulles)
+                // Filtrer les positions réelles non nulles
                 const validPositions = data.positions.filter(p => parseFloat(p.latitude) !== 0 && parseFloat(p.longitude) !== 0);
                 const posList = validPositions.length > 0 ? validPositions : data.positions;
 
-                // Extraire la toute dernière position reçue du bracelet
+                // Toute dernière position reçue du bracelet
                 const lastPos = posList[posList.length - 1];
                 const isAlert = parseInt(lastPos.etat) === 1;
 
-                // Mise à jour du badge Alerte / Normal
+                // Mise à jour du badge d'état
                 if (isAlert) {
                     badgeDiv.className = "live-badge status-alert";
                     badgeDiv.innerHTML = `<span class="dot"></span> ⚠️ BOUTON SOS PRESSÉ ! DANGER`;
                 } else {
                     badgeDiv.className = "live-badge";
-                    badgeDiv.innerHTML = `<span class="dot"></span> Signal GPS Actif (${posList.length} positions enregistrées)`;
+                    badgeDiv.innerHTML = `<span class="dot"></span> Signal GPS Actif (${posList.length} points de passage)`;
                 }
 
-                // 1. Tracer le chemin/parcours de déplacement (Polyline bleue)
-                const latLngs = posList.map(p => [parseFloat(p.latitude), parseFloat(p.longitude)]);
+                // 1. Vider et redistribuer les petits points de passage historiques
+                historyLayerGroup.clearLayers();
+                const latLngs = [];
 
+                posList.forEach((p, idx) => {
+                    const lat = parseFloat(p.latitude);
+                    const lng = parseFloat(p.longitude);
+                    latLngs.push([lat, lng]);
+
+                    // Ajouter un petit point de passage discret pour chaque étape historique
+                    if (idx < posList.length - 1) {
+                        const circle = L.circleMarker([lat, lng], {
+                            radius: 5,
+                            fillColor: p.etat === 1 ? '#ef4444' : '#3b82f6',
+                            color: '#ffffff',
+                            weight: 1,
+                            opacity: 0.9,
+                            fillOpacity: 0.8
+                        });
+                        circle.bindPopup(`
+                            <strong>Étape ${idx + 1} / ${posList.length}</strong><br>
+                            Lat: ${lat}<br>Lng: ${lng}<br>
+                            Statut: ${p.etat === 1 ? '<span style="color:red;">SOS</span>' : '<span style="color:green;">Normal</span>'}
+                        `);
+                        historyLayerGroup.addLayer(circle);
+                    }
+                });
+
+                // 2. Tracer la ligne continue de parcours (Trajectoire complète)
                 if (pathPolyline) {
                     pathPolyline.setLatLngs(latLngs);
                 } else {
                     pathPolyline = L.polyline(latLngs, {
                         color: '#2563eb',
                         weight: 4,
-                        opacity: 0.7,
-                        dashArray: '8, 8'
+                        opacity: 0.75,
+                        dashArray: '6, 6'
                     }).addTo(map);
                 }
 
-                // 2. Mettre à jour le Marqueur Unique de la Position Actuelle
+                // 3. Marqueur principal sur la Position Actuelle (dernière étape)
                 const currentLatLng = [parseFloat(lastPos.latitude), parseFloat(lastPos.longitude)];
 
                 if (currentMarker) {
@@ -155,28 +182,25 @@
 
                 currentMarker.bindPopup(`
                     <div style="text-align:center;">
-                        <strong style="font-size:1.1em;color:#6d0b2c;">📍 Position Actuelle</strong><br>
+                        <strong style="font-size:1.1em;color:#6d0b2c;">📍 Position Actuelle (En Direct)</strong><br>
                         <strong>Enfant :</strong> ${data.enfant ? data.enfant.prenom + ' ' + data.enfant.nom : ''}<br>
                         <strong>Lat :</strong> ${lastPos.latitude} | <strong>Lng :</strong> ${lastPos.longitude}<br>
                         <strong>Statut :</strong> ${isAlert ? '<span style="color:red;font-weight:bold;">⚠️ DANGER / SOS</span>' : '<span style="color:green;font-weight:bold;">🟢 Normal</span>'}
                     </div>
                 `).openPopup();
 
-                // Centrer la carte lors du premier chargement ou recentrage
+                // Centrer lors du premier chargement
                 if (isFirstLoad) {
                     map.setView(currentLatLng, 16);
                     isFirstLoad = false;
                 }
             }
         } catch (err) {
-            console.error("Erreur de rafraîchissement GPS:", err);
+            console.error("Erreur de chargement des positions:", err);
         }
     }
 
-    // Premier chargement immédiat
     loadTrackingData();
-
-    // Rafraîchissement automatique toutes les 5 secondes (Temps réel)
     setInterval(loadTrackingData, 5000);
 </script>
 </body>
