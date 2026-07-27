@@ -1,0 +1,8 @@
+{
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "/MyGPS-Vercel/api/:path*" },
+    { "source": "/", "destination": "/MyGPS-Vercel/public/index.html" },
+    { "source": "/:path*", "destination": "/MyGPS-Vercel/public/:path*" }
+  ]
+}
